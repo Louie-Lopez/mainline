@@ -1,0 +1,20 @@
+{
+  "name": "mainline",
+  "version": "0.1.0-beta.1",
+  "description": "Keep the whole project in view during long AI conversations: one goal, stable stages, and clear current work.",
+  "author": {
+    "name": "Louie-Lopez"
+  },
+  "homepage": "https://github.com/Louie-Lopez/mainline",
+  "repository": "https://github.com/Louie-Lopez/mainline",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Mainline",
+    "shortDescription": "Keep the whole project in view",
+    "longDescription": "A minimal project timeline for graphical AI workspaces. Track stable lifecycle stages, parallel work, and optional substages with a local browser view.",
+    "developerName": "Louie-Lopez",
+    "category": "Productivity",
+    "defaultPrompt": "Use Mainline to show this project's full lifecycle and current stages."
+  }
+}

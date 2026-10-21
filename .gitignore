@@ -1,0 +1,10 @@
+.mainline/
+.test-runs/
+__pycache__/
+*.py[cod]
+*.runtime.json
+*.server.log
+.env
+.env.*
+node_modules/
+dist/

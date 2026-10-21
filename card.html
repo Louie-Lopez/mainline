@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title></title>
+<style>
+:root{color-scheme:light dark;--bg:#fcf9f3;--ink:#394b68;--line:#d8cbb4;--active:#233c63;--halo:#eee3cf;--accent:#ad874b;--heading:#203655;--badge:#f0e3c9;--badge-ink:#62491f}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg)}body{font:15px/1.5 system-ui,"Microsoft YaHei",sans-serif}
+main{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 28px;gap:42px}
+.mainline{margin:0;width:100%;max-width:1000px;text-align:center;font-size:16px;font-weight:500;letter-spacing:.025em;line-height:1.8;color:var(--heading);overflow-wrap:anywhere}.mainline[hidden]{display:none}
+.stage-details{margin:0;width:100%;max-width:680px;font-size:14px;line-height:1.9;color:var(--ink);overflow-wrap:anywhere;text-align:left}.stage-details[hidden]{display:none}
+.axis[data-stale="true"]~.stage-details{opacity:.4}
+.axis{list-style:none;display:flex;width:100%;max-width:1100px;padding:0;margin:0;transition:opacity .15s}
+.axis[data-stale="true"]{opacity:.4}.stage{flex:1;min-width:0;position:relative;display:flex;align-items:center;flex-direction:column;color:var(--ink);text-align:center}
+.stage::after{content:'';position:absolute;height:2px;left:calc(50% + 12px);width:calc(100% - 24px);top:9px;background:var(--line)}.stage:last-child::after{display:none}
+.dot{position:relative;z-index:1;width:20px;height:20px;border:2px solid var(--line);background:var(--bg);border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bg)}
+.label{margin:16px 8px 0;overflow-wrap:anywhere}.stage[data-status="done"]>.node>.dot{background:var(--active);border-color:var(--active)}.stage[data-status="done"]:has(+.stage[data-status="done"])::after{background:var(--active)}
+.stage{font-weight:400}.stage[data-status="active"]{color:var(--active);font-weight:700}.stage[data-status="active"]>.node>.dot{border:6px solid var(--active);box-shadow:0 0 0 5px var(--halo),0 0 0 6px var(--accent)}
+.activity{position:absolute;top:-36px;left:50%;transform:translateX(-50%);background:var(--badge);color:var(--badge-ink);font-size:11px;line-height:22px;padding:0 9px;border-radius:4px;white-space:nowrap;font-weight:600}
+.axis{margin-top:24px}
+.node{display:flex;flex-direction:column;align-items:center;width:100%;position:relative;color:inherit;font:inherit;text-align:inherit}
+button.node{border:0;padding:0;background:none;cursor:pointer}button.node:focus-visible{outline:2px solid var(--active);outline-offset:8px;border-radius:4px}
+button.node[aria-pressed="true"]>.label{text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:1px;text-underline-offset:5px}
+.chevron{display:inline-block;margin-left:6px;font-size:12px;color:var(--ink)}
+.children{display:none}.stage.expanded>.children{display:flex}
+.axis:has(>.expanded){margin-top:90px}
+.axis[data-layout="horizontal"]>.expanded>.node{position:absolute;top:-68px}
+.axis[data-layout="horizontal"]>.expanded>.node>.dot,.axis[data-layout="horizontal"]>.expanded>.node>.activity{display:none}
+.axis[data-layout="horizontal"]>.expanded>.node>.label{margin:0}
+.children{list-style:none;padding:0;margin:0;width:100%;position:relative}
+.children::before{content:'';position:absolute;inset:-18px 3px -12px;border:1px solid var(--line);border-radius:12px;pointer-events:none}
+.axis[data-layout="horizontal"]>.expanded::after{left:calc(100% - var(--child-half) + 12px);width:calc(var(--child-half) + var(--unit-half) - 24px)}
+.axis[data-layout="vertical"] .node{flex-direction:row;align-items:flex-start;width:auto}
+.axis[data-layout="vertical"]>.expanded{display:block}
+.axis[data-layout="vertical"]>.expanded>.children{flex-direction:column;margin:12px 0 28px 28px;width:calc(100% - 28px)}
+.axis[data-layout="vertical"]>.expanded>.children::before{inset:-12px -4px -12px 0}
+.axis[data-layout="vertical"]>.expanded>.node>.label{margin-bottom:0}
+.axis[data-layout="vertical"]:has(>.expanded){margin-top:24px}
+.axis[data-layout="vertical"]{flex-direction:column;width:min(320px,100%)}
+.axis[data-layout="vertical"] .stage{flex:none;flex-direction:row;align-items:flex-start;min-height:88px;text-align:left;padding-left:12px}
+.axis[data-layout="vertical"] .stage:last-child{min-height:20px}
+.axis[data-layout="vertical"] .stage::after{left:21px;top:32px;width:2px;height:calc(100% - 24px)}
+.axis[data-layout="vertical"] .label{margin:-2px 0 22px 26px;max-width:calc(100% - 54px)}
+.axis[data-layout="vertical"] .activity{position:static;transform:none;flex:none;margin:-1px 0 0 12px}.axis[data-layout="vertical"] .stage[data-status="active"] .label{max-width:calc(100% - 125px)}
+.axis[data-layout="vertical"] .node{width:100%}
+.axis[data-layout="vertical"] .node>.label{flex:1;min-width:0;max-width:none;margin-right:4px}
+.axis[data-layout="vertical"] .stage[data-status="active"] .node>.label{max-width:none}
+.axis[data-layout="vertical"] .activity{max-width:45%;white-space:normal;overflow-wrap:anywhere;text-align:center}
+@media(prefers-color-scheme:dark){:root{--bg:#101a30;--ink:#c2cde1;--line:#43516c;--active:#e5c78e;--halo:#28334b;--accent:#bd9a61;--heading:#f3eada;--badge:#e5c78e;--badge-ink:#302311}}
+@media(prefers-reduced-motion:reduce){.axis{transition:none}}
+</style>
+</head>
+<body>
+<main><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><p id="stage-details" class="stage-details" aria-live="polite" hidden></p></main>
+<script>
+'use strict';
+const axis=document.getElementById('axis');
+const messages={
+  en:{axis:'Project stages',active:'In progress',done:'Completed',pending:'Not started',view:'View stage goal',collapse:'Collapse substages',expand:'Expand substages',children:name=>'Substages of '+name,stale:'Project stages, connection or read failed, showing last known position',separator:', '},
+  zh:{axis:'项目阶段',active:'进行中',done:'已完成',pending:'未开始',view:'查看阶段主线',collapse:'收起子阶段',expand:'展开子阶段',children:name=>name+'的子阶段',stale:'项目阶段，连接或读取失败，显示上次位置',separator:'，'}
+};
+const languageOf=value=>String(value||'').toLowerCase().split(/[-_]/)[0];
+const requested=languageOf(new URLSearchParams(location.search).get('lang'));
+const language=Object.hasOwn(messages,requested)?requested:(navigator.languages||[navigator.language]).map(languageOf).find(value=>Object.hasOwn(messages,value))||'en';
+const text=messages[language];
+document.documentElement.lang=language==='zh'?'zh-CN':language;
+axis.setAttribute('aria-label',text.axis);
+let task=null, signature='', stages=[], currentState=null, expanded=null, selected=null;
+const own=(map,key)=>map&&Object.hasOwn(map,key)?map[key]:undefined;
+const stageKey=(parent,name)=>JSON.stringify([parent,name]);
+function layout(){
+  const longest=stages.reduce((n,s)=>Math.max(n,Array.from(s).length),0);
+  const longestBadge=[...axis.querySelectorAll('.activity')].reduce((n,e)=>Math.max(n,Array.from(e.textContent).length),0);
+  const perStage=Math.max(106,Math.min(180,longest*15+24),longestBadge*11+24);
+  axis.dataset.layout=Math.min(1100,window.innerWidth-56)>=Math.max(380,stages.length*perStage)?'horizontal':'vertical';
+  const horizontal=axis.dataset.layout==='horizontal';
+  [...axis.children].forEach(li=>li.style.flex=horizontal&&li.classList.contains('expanded')?li.dataset.count:'');
+  const unit=axis.clientWidth/Math.max(1,stages.length);
+  axis.style.setProperty('--unit-half',unit/2+'px');
+  axis.style.setProperty('--child-half',unit/2+'px');
+}
+new ResizeObserver(layout).observe(document.documentElement);
+function labelsFor(group,statuses=group.stage_statuses){
+  const labels=group.stage_labels===undefined?{}:group.stage_labels;
+  if(!labels||typeof labels!=='object'||Array.isArray(labels))throw Error('Invalid labels');
+  for(const [name,label] of Object.entries(labels)){
+    if(!group.stages.includes(name)||statuses[group.stages.indexOf(name)]!=='active'||typeof label!=='string'||!label.trim()||Array.from(label).length>12||/[\r\n]/.test(label))throw Error('Invalid label');
+  }
+  return labels;
+}
+function stageTextFor(group,field,singleLine=false){
+  const lines=group[field]===undefined?{}:group[field];
+  if(!lines||typeof lines!=='object'||Array.isArray(lines))throw Error('Invalid stage text');
+  for(const [name,line] of Object.entries(lines)){
+    if(!group.stages.includes(name)||typeof line!=='string'||!line.trim()||(singleLine&&/[\r\n]/.test(line)))throw Error('Invalid stage text');
+  }
+  return lines;
+}
+const mainlinesFor=group=>stageTextFor(group,'stage_mainlines',true);
+const detailsFor=group=>stageTextFor(group,'stage_details');
+function render(s,force=false){
+  if(!s || typeof s.task_id!=='string' || !Array.isArray(s.stages) || !s.stages.length || s.stages.some(x=>typeof x!=='string'||!x.trim())) throw Error('Invalid state');
+  let statuses=s.stage_statuses;
+  if(statuses===undefined){
+    if(!Number.isInteger(s.current_stage)||s.current_stage<0||s.current_stage>=s.stages.length||typeof s.completed!=='boolean')throw Error('Invalid state');
+    statuses=s.stages.map((_,i)=>s.completed||i<s.current_stage?'done':i===s.current_stage?'active':'pending');
+  }
+  if(!Array.isArray(statuses)||statuses.length!==s.stages.length||statuses.some(x=>!['pending','active','done'].includes(x)))throw Error('Invalid states');
+  if(task && task!==s.task_id) throw Error('Wrong task');
+  if(s.mainline!==undefined && typeof s.mainline!=='string')throw Error('Invalid mainline');
+  const subs=s.substages||{};
+  if(typeof subs!=='object'||Array.isArray(subs))throw Error('Invalid substages');
+  for(const [parent,group] of Object.entries(subs)){
+    if(!s.stages.includes(parent)||!group||!Array.isArray(group.stages)||!group.stages.length||group.stages.some(x=>typeof x!=='string'||!x.trim())||!Array.isArray(group.stage_statuses)||group.stage_statuses.length!==group.stages.length||group.stage_statuses.some(x=>!['pending','active','done'].includes(x)))throw Error('Invalid substages');
+    labelsFor(group);
+    mainlinesFor(group);
+    detailsFor(group);
+  }
+  const labels=labelsFor(s,statuses);
+  const mainlines=mainlinesFor(s);
+  const details=detailsFor(s);
+  const next=JSON.stringify([s.mainline,s.stages,statuses,subs,labels,mainlines,details]);
+  if(next===signature&&!force)return;
+  const focused=document.activeElement?.dataset.key;
+  task=s.task_id;currentState=s;
+  if(!Object.hasOwn(subs,expanded))expanded=null;
+  if(selected){
+    const group=selected.parent===null?s:own(subs,selected.parent);
+    if(!group?.stages.includes(selected.name))selected=null;
+  }
+  stages=s.stages.flatMap(name=>name===expanded?subs[name].stages:[name]);
+  let sentence=s.mainline||'',detail='';
+  if(selected){
+    const parentLine=selected.parent===null?sentence:(own(mainlines,selected.parent)||sentence);
+    const lines=selected.parent===null?mainlines:mainlinesFor(subs[selected.parent]);
+    sentence=own(lines,selected.name)||parentLine;
+    const descriptions=selected.parent===null?details:detailsFor(subs[selected.parent]);
+    detail=own(descriptions,selected.name)||'';
+  }
+  document.getElementById('mainline').textContent=sentence;
+  document.getElementById('mainline').hidden=!sentence;
+  document.getElementById('stage-details').textContent=detail;
+  document.getElementById('stage-details').hidden=!detail;
+  const fragment=document.createDocumentFragment();
+  function makeStage(name,status,peers,group,activity,parent=null){
+    const statusText=status==='active'?(activity||text.active):text[status];
+    const li=document.createElement('li');li.className='stage';li.dataset.status=status;
+    li.setAttribute('aria-label',[name,statusText].join(text.separator));
+    if(status==='active'&&peers.filter(x=>x==='active').length===1)li.setAttribute('aria-current','step');
+    const node=document.createElement('button');node.className='node';node.type='button';
+    const key=stageKey(parent,name),isSelected=Boolean(selected?.name===name&&selected.parent===parent);
+    node.dataset.key=key;node.dataset.stage=name;
+    node.setAttribute('aria-pressed',String(isSelected));node.setAttribute('aria-label',[name,statusText,text.view].join(text.separator));
+    if(isSelected&&detail)node.setAttribute('aria-describedby','stage-details');
+    node.onclick=()=>{
+      if(isSelected||(group&&expanded===name)){selected=null;expanded=null;}
+      else{selected={parent,name};if(parent===null)expanded=group?name:null;}
+      render(currentState,true);
+      const buttons=[...axis.querySelectorAll('button')];
+      (buttons.find(b=>b.dataset.key===key)||buttons.find(b=>b.dataset.key===stageKey(null,parent)))?.focus({preventScroll:true});
+    };
+    const dot=document.createElement('span');dot.className='dot';dot.setAttribute('aria-hidden','true');
+    dot.textContent=status==='done'?'✓':'';
+    const label=document.createElement('span');label.className='label';label.textContent=name;
+    node.append(dot,label);li.append(node);
+    if(status==='active'){const badge=document.createElement('span');badge.className='activity';badge.textContent=statusText;badge.setAttribute('aria-hidden','true');node.append(badge);}
+    if(group){
+      const isOpen=expanded===name;
+      node.type='button';node.dataset.parent=name;node.setAttribute('aria-expanded',String(isOpen));
+      const chevron=document.createElement('span');chevron.className='chevron';chevron.textContent=isOpen?'▴':'▾';chevron.setAttribute('aria-hidden','true');label.after(chevron);
+      // Keep the disclosure mark beside the label without changing its accessible text.
+      const labelWrap=document.createElement('span');labelWrap.className='label';label.className='label-text';label.replaceWith(labelWrap);labelWrap.append(label,chevron);
+      node.setAttribute('aria-label',[name,statusText,isOpen?text.collapse:text.expand].join(text.separator));
+      li.classList.toggle('expanded',isOpen);li.dataset.count=group.stages.length;
+      if(isOpen){const children=document.createElement('ol');children.className='children';children.setAttribute('aria-label',text.children(name));children.id='children-'+s.stages.indexOf(name);node.setAttribute('aria-controls',children.id);const childLabels=labelsFor(group);group.stages.forEach((child,j)=>children.append(makeStage(child,group.stage_statuses[j],group.stage_statuses,null,Object.hasOwn(childLabels,child)?childLabels[child]:null,name)));li.append(children);}
+    }
+    return li;
+  }
+  s.stages.forEach((name,i)=>fragment.append(makeStage(name,statuses[i],statuses,Object.hasOwn(subs,name)?subs[name]:null,Object.hasOwn(labels,name)?labels[name]:null)));
+  axis.replaceChildren(fragment);signature=next;layout();
+  if(focused)[...axis.querySelectorAll('button')].find(b=>b.dataset.key===focused)?.focus({preventScroll:true});
+}
+let refreshTimer=null,activeRequest=null;
+async function refresh(){
+  clearTimeout(refreshTimer);
+  if(document.hidden||activeRequest)return;
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),2000);
+  activeRequest=controller;
+  try{
+    const response=await fetch('/state',{cache:'no-store',signal:controller.signal});
+    if(!response.ok)throw Error('Unavailable');
+    const data=await response.json();
+    if(activeRequest!==controller||document.hidden)return;
+    if(data.state)render(data.state);
+    if(data.error||!data.state)throw Error('Stale');
+    axis.dataset.stale='false';axis.setAttribute('aria-label',text.axis);
+  }catch(_){
+    if(activeRequest===controller&&!document.hidden){axis.dataset.stale='true';axis.setAttribute('aria-label',text.stale);}
+  }finally{
+    clearTimeout(timer);
+    if(activeRequest===controller){activeRequest=null;if(!document.hidden)refreshTimer=setTimeout(refresh,30000);}
+  }
+}
+document.addEventListener('visibilitychange',()=>{
+  clearTimeout(refreshTimer);
+  if(document.hidden){if(activeRequest){activeRequest.abort();activeRequest=null;}}
+  else refresh();
+});
+refresh();
+</script>
+</body>
+</html>
