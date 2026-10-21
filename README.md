@@ -50,12 +50,7 @@ The current release is a public beta. Other AI applications and macOS/Linux have
 
 Requires **Python 3.10+** and a modern browser. Mainline itself needs no additional Python packages, API key, account, or hosted service.
 
-There are two ways to install the same functionality:
-
-- A **skill** is a folder containing instructions for the assistant and supporting files. Mainline's folder includes `SKILL.md` (when and how to update), `mainline.py` (saving and serving the record), and `card.html` (the browser view). It uses the open [Agent Skills format](https://agentskills.io/home).
-- A **plugin** packages that folder so an AI application can install and manage it. This repository provides a tested Codex installation route.
-
-Choose one form. Installing both adds no functionality and can load the skill twice. Either way, the view runs in a browser; packaging it as a plugin does not add a native toolbar or automatic conversation monitoring.
+Choose the Codex plugin or the standalone [Agent Skills](https://agentskills.io/home) package. Both provide the same functionality; install only one to avoid duplicate loading. Mainline opens in a browser panel or separate browser, with progress explicitly updated by the assistant.
 
 ### Codex: plugin installation
 

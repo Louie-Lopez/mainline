@@ -50,12 +50,7 @@ Mainline 的记录和网页展示不绑定某个模型。能否接入，主要�
 
 需要 **Python 3.10+** 和现代浏览器。Mainline 本身不需要额外 Python 包、API 密钥、账号或云服务。
 
-相同功能提供两种安装形式：
-
-- **技能（skill）**是一个文件夹，包含给 AI 的操作说明和所需文件。Mainline 的技能目录包含 `SKILL.md`（何时、如何更新）、`mainline.py`（保存和提供记录）、`card.html`（网页展示），采用开放的 [Agent Skills 格式](https://agentskills.io/home)。
-- **插件（plugin）**把这个技能目录打包，供 AI 工具安装和管理。本仓库提供了已验证的 Codex 插件安装入口。
-
-选择其中一种即可。两种都装不会增加功能，还可能重复加载技能。两种形式都通过浏览器展示；插件封装不会额外提供原生工具栏或自动监听对话。
+选择 Codex 插件或独立的 [Agent Skills](https://agentskills.io/home) 技能包即可，两者功能相同，只装一种以免重复加载。Mainline 在浏览器面板或独立浏览器中展示，由 AI 明确更新进展。
 
 ### Codex：安装插件
 
