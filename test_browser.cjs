@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {spawn,spawnSync}=require('node:child_process');
 const {chromium}=require(process.env.MAINLINE_PLAYWRIGHT||'playwright');
-const python=process.env.MAINLINE_PYTHON||'python',script=path.join(__dirname,'mainline.py');
+const python=process.env.MAINLINE_PYTHON||'python',script=path.resolve(process.env.MAINLINE_SCRIPT||path.join(__dirname,'mainline.py'));
 const run=path.join(__dirname,'.test-runs','stages-'+Date.now());fs.mkdirSync(run,{recursive:true});
 const state=path.join(run,'state.json'),names=['需求确认','方案设计','实现','验证','交付'];
 const mainline='观察市场叙事，预测市场最可能向哪种叙事切换，以及为什么。';

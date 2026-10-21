@@ -110,6 +110,7 @@ python mainline.py start --state STATE
 
 ```sh
 python -m unittest -q test_mainline
+python test_package_runtime.py
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
 node test_browser.cjs
@@ -120,6 +121,8 @@ node test_demo.cjs
 ```
 
 Node 和 Playwright 仅用于浏览器测试。可用 `MAINLINE_PYTHON`、`MAINLINE_PLAYWRIGHT`、`MAINLINE_BROWSER_CHANNEL` 指定已有运行环境。测试数据保留在被忽略的 `.test-runs/`。编辑 `mainline.py`、`card.html` 和 `packaging/mainline-skill.md` 后运行 `build_plugin.py`，按明确清单生成仓库中的 `plugin/` 分发目录及 `dist/mainline-<版本>.zip`。两者均排除实际项目数据，`skills/mainline/` 使用同一份技能和运行代码。
+
+装有 Codex CLI 时，可用 `python test_plugin.py --browser` 在独立 Codex 配置目录中验证插件安装、技能发现，以及安装后缓存中的运行程序和页面，不影响现有配置与 Mainline 服务。[跨系统检查](https://github.com/Louie-Lopez/mainline/actions/workflows/compatibility.yml)在 Windows、macOS、Linux 上测试同一份打包程序与页面。
 
 最有帮助的反馈来自实际项目：能否一眼看懂项目走到了哪里、是否减少了翻阅对话的次数、更新是否打扰对话。请在 [Issues](https://github.com/Louie-Lopez/mainline/issues) 中附上宿主、系统、期望行为和不含私人内容的最小示例。
 

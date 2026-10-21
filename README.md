@@ -110,6 +110,7 @@ After changing `mainline.py`, restart its existing server; refreshing the browse
 
 ```sh
 python -m unittest -q test_mainline
+python test_package_runtime.py
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
 node test_browser.cjs
@@ -120,6 +121,8 @@ node test_demo.cjs
 ```
 
 Node/Playwright are only for browser tests. `MAINLINE_PYTHON`, `MAINLINE_PLAYWRIGHT`, and `MAINLINE_BROWSER_CHANNEL` can select an existing runtime/module/browser channel. Tests retain isolated fixtures under ignored `.test-runs/`. Edit `mainline.py`, `card.html`, and `packaging/mainline-skill.md`; `build_plugin.py` regenerates the tracked `plugin/` distribution and `dist/mainline-<version>.zip` from an explicit file list. Both exclude runtime data and contain the same skill/runtime sources under `skills/mainline/`.
+
+With Codex CLI installed, `python test_plugin.py --browser` also tests installation in a separate Codex profile, skill discovery, and the runtime and views loaded from the installed plugin cache. It leaves your existing Codex configuration and Mainline service alone. [Cross-platform checks](https://github.com/Louie-Lopez/mainline/actions/workflows/compatibility.yml) test the packaged runtime and browser views on Windows, macOS, and Linux.
 
 Feedback is most useful after trying a real project: could you tell where the project stood, did you need to reread the conversation less, and did updates become intrusive? Open an [issue](https://github.com/Louie-Lopez/mainline/issues) with the host, operating system, expected behavior, and a minimal example without private data.
 

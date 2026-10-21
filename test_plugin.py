@@ -1,19 +1,22 @@
-"""Verify packaged bytes and actual Codex skill discovery in an isolated profile."""
+"""Install a plugin in an isolated Codex profile and test its cached runtime."""
 
+import argparse
 import json
 import os
 from pathlib import Path
 import queue
 import shutil
 import subprocess
+import sys
 import threading
 import uuid
 import zipfile
 
 from build_plugin import ROOT, SOURCES, build
+from test_package_runtime import check_runtime
 
 
-def check():
+def check(browser=False):
     archive = build()
     with zipfile.ZipFile(archive) as bundle:
         for name, source_file in SOURCES.items():
@@ -73,14 +76,35 @@ def check():
                  if skill["name"] == "mainline:mainline"]
         assert len(found) == 1 and found[0]["enabled"], found
         installed = Path(found[0]["path"]).parent
+        assert installed.resolve().is_relative_to((profile / "plugins/cache").resolve())
+        assert not (profile / "skills/mainline").exists()
+        assert not any(skill["name"] == "mainline"
+                       for entry in data["data"] for skill in entry["skills"])
         for name, source_file in SOURCES.items():
             assert (installed / name).read_bytes() == source_file.read_bytes()
-        print(json.dumps({"passed": True, "skill": found[0]["name"],
-                          "archive": str(archive), "fixture": str(run)}, indent=2))
+        runtime = check_runtime(installed, run)
+        browsers = []
+        if browser:
+            browser_env = {**os.environ, "MAINLINE_SCRIPT": str(installed / "mainline.py"),
+                           "MAINLINE_PYTHON": sys.executable}
+            for suite in ("test_browser.cjs", "test_languages.cjs"):
+                result = subprocess.run(["node", str(ROOT / suite)], cwd=ROOT,
+                                        env=browser_env, capture_output=True, text=True,
+                                        encoding="utf-8", timeout=180)
+                assert result.returncode == 0, result.stdout + result.stderr
+                browsers.append({"suite": suite, "result": json.loads(result.stdout)})
+        report = {"passed": True, "skill": found[0]["name"], "installed": str(installed),
+                  "archive": str(archive), "fixture": str(run),
+                  "runtime": runtime, "browser_suites": browsers}
+        (run / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)
+                                         + "\n", encoding="utf-8")
+        print(json.dumps(report, ensure_ascii=False, indent=2))
     finally:
         process.terminate()
         process.wait(timeout=10)
 
 
 if __name__ == "__main__":
-    check()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--browser", action="store_true")
+    check(browser=parser.parse_args().browser)

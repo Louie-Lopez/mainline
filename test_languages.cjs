@@ -4,7 +4,7 @@ const {spawn,spawnSync}=require('node:child_process');
 const {chromium}=require(process.env.MAINLINE_PLAYWRIGHT||'playwright');
 const python=process.env.MAINLINE_PYTHON||'python';
 const run=path.join(__dirname,'.test-runs','languages-'+Date.now());fs.mkdirSync(run,{recursive:true});
-const state=path.join(run,'state.json'),script=path.join(__dirname,'mainline.py');
+const state=path.join(run,'state.json'),script=path.resolve(process.env.MAINLINE_SCRIPT||path.join(__dirname,'mainline.py'));
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const goal='Keep the whole project in view, from the original goal to delivery.';
 const names=['Define','Design','Build','Validate','Deliver'];
