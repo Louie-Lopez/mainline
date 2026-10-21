@@ -4,7 +4,9 @@
 
 [直接体验](https://louie-lopez.github.io/mainline/?lang=zh) · [English](README.md) · [下载版本](https://github.com/Louie-Lopez/mainline/releases) · [反馈问题](https://github.com/Louie-Lopez/mainline/issues)
 
-长对话会不断累积修改、实验和临时插问。最新任务容易取代整个项目，已经完成的工作难以找回，“本轮做完了”也容易被误当成“项目完成了”。Mainline 用**一句项目主线和一条覆盖项目从启动到完成的阶段轴**，让你直接看到：当前工作属于哪里、哪些环节正在推进、还有哪些没有完成，减少反复翻阅对话的负担。
+和 AI 做产品或推进项目时，对话里有大量具体任务的细节，用户却不容易看清全局：项目现在走到了哪个阶段？眼前的修改属于哪一环？后面还有什么？即使模型记得上下文，用户仍可能需要反复回忆、翻阅记录或追问，才能重新建立项目的主线脉络。
+
+Mainline 在对话旁保留**一句项目目标和一条覆盖全生命周期的稳定阶段轴**，让你一眼看清当前位置、正在推进的工作和剩余环节，需要时再展开细节。核心目的是降低回忆与查询进展的负担，让用户始终看得见整个项目。
 
 ![Mainline 的项目全景与两个同时活动的阶段](docs/overview.png)
 
@@ -22,7 +24,7 @@ Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目
 - **跨对话恢复。** 同项目沿用同一份本地状态，避免每次从聊天记录重建进度。
 - **保持低负担。** 浏览、点击、刷新都不调用模型；页面每 30 秒读取本地状态，隐藏后暂停。AI 只记录有意义的变化。
 
-这条轴表示项目阶段的先后顺序，不表示实际耗时。进展来自 AI 的明确更新，因此记录是否准确取决于更新是否可靠。Mainline 帮助你发现偏离、接续工作，不会独立监听对话或验证完成情况。AI 读取使用规则和执行更新，仍会使用正常的对话上下文与工具调用。
+这条轴表示项目阶段的先后顺序，不表示实际耗时。进展来自 AI 的明确更新，因此记录是否准确取决于更新是否可靠。Mainline 提供双方可共同查看的进展视图，也有助于发现范围偏离、接续工作；它不会独立监听对话或验证完成情况。AI 读取使用规则和执行更新，仍会使用正常的对话上下文与工具调用。
 
 <details>
 <summary>查看展开环节和窄窗口效果</summary>
@@ -119,7 +121,7 @@ node test_demo.cjs
 
 Node 和 Playwright 仅用于浏览器测试。可用 `MAINLINE_PYTHON`、`MAINLINE_PLAYWRIGHT`、`MAINLINE_BROWSER_CHANNEL` 指定已有运行环境。测试数据保留在被忽略的 `.test-runs/`。编辑 `mainline.py`、`card.html` 和 `packaging/mainline-skill.md` 后运行 `build_plugin.py`，按明确清单生成仓库中的 `plugin/` 分发目录及 `dist/mainline-<版本>.zip`。两者均排除实际项目数据，`skills/mainline/` 使用同一份技能和运行代码。
 
-最有帮助的反馈来自实际项目：主线是否缩窄、活动阶段是否清楚、更新是否打扰对话。请在 [Issues](https://github.com/Louie-Lopez/mainline/issues) 中附上宿主、系统、期望行为和不含私人内容的最小示例。
+最有帮助的反馈来自实际项目：能否一眼看懂项目走到了哪里、是否减少了翻阅对话的次数、更新是否打扰对话。请在 [Issues](https://github.com/Louie-Lopez/mainline/issues) 中附上宿主、系统、期望行为和不含私人内容的最小示例。
 
 公开演示由 `card.html` 与 `demo/` 中的少量页面代码生成；修改后运行 `build_demo.py`。GitHub Pages 托管仓库中的 `docs/` 目录，演示无需后端或依赖，不连接真实项目记录。
 

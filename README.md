@@ -4,7 +4,9 @@
 
 [Try the demo](https://louie-lopez.github.io/mainline/?lang=en) · [简体中文](README.zh-CN.md) · [Releases](https://github.com/Louie-Lopez/mainline/releases) · [Report an issue](https://github.com/Louie-Lopez/mainline/issues)
 
-Long AI conversations accumulate fixes, experiments, and side questions. The latest request can take over the plan, completed work becomes hard to recover, and “this task is done” gets confused with “the project is done.” Mainline keeps one project goal and a small, stable axis of stages from project start to completion beside the conversation, so you can see **where the work belongs, what is active, and what remains** without rereading the chat.
+When you build a product or run a project with AI, the conversation gives you plenty of detail about individual tasks. Keeping a clear picture of the whole project takes more effort: which stage are we in, where does this change belong, and what is still ahead? Even when the assistant retains the context, you may need to reread messages or ask for another summary just to get your bearings.
+
+Mainline keeps **one project goal and a stable axis covering the full lifecycle** beside the conversation. You can see the current position, active work, and remaining stages at a glance, then open a stage for detail. The aim is to reduce the effort of remembering and looking up progress, so you can follow the project as a whole.
 
 ![Mainline showing a project lifecycle with two active stages](docs/overview.png)
 
@@ -22,7 +24,7 @@ Mainline is a local project view that you use alongside an AI assistant. You ask
 - **Resumes across chats.** Reuse the same project's local state file instead of reconstructing progress from every message.
 - **Keeps overhead small.** No model calls for viewing, clicking, or refreshing. The page checks local state every 30 seconds and pauses while hidden; the agent writes only meaningful changes.
 
-The axis shows the order of project stages, rather than time spent. Progress comes from explicit updates by the assistant, so its accuracy depends on those updates. Mainline helps you spot drift and resume work; it does not independently monitor conversations or verify completion. Reading its instructions and making updates still use the assistant's normal context and tool calls.
+The axis shows the order of project stages, rather than time spent. Progress comes from explicit updates by the assistant, so its accuracy depends on those updates. Mainline provides a shared view of progress that can also help you notice scope drift and resume work. It does not independently monitor conversations or verify completion. Reading its instructions and making updates still use the assistant's normal context and tool calls.
 
 <details>
 <summary>Expanded stage and narrow-window view</summary>
@@ -119,7 +121,7 @@ node test_demo.cjs
 
 Node/Playwright are only for browser tests. `MAINLINE_PYTHON`, `MAINLINE_PLAYWRIGHT`, and `MAINLINE_BROWSER_CHANNEL` can select an existing runtime/module/browser channel. Tests retain isolated fixtures under ignored `.test-runs/`. Edit `mainline.py`, `card.html`, and `packaging/mainline-skill.md`; `build_plugin.py` regenerates the tracked `plugin/` distribution and `dist/mainline-<version>.zip` from an explicit file list. Both exclude runtime data and contain the same skill/runtime sources under `skills/mainline/`.
 
-Feedback is most useful after trying a real project: did the scope stay correct, were active stages clear, and did updates become intrusive? Open an [issue](https://github.com/Louie-Lopez/mainline/issues) with the host, operating system, expected behavior, and a minimal example without private data.
+Feedback is most useful after trying a real project: could you tell where the project stood, did you need to reread the conversation less, and did updates become intrusive? Open an [issue](https://github.com/Louie-Lopez/mainline/issues) with the host, operating system, expected behavior, and a minimal example without private data.
 
 The public demo is generated from `card.html` and the small `demo/` wrapper. Run `build_demo.py` after either changes. GitHub Pages serves the tracked `docs/` directory; the demo has no backend, dependencies, or connection to real project records.
 
