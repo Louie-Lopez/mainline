@@ -62,13 +62,25 @@ def check_runtime(skill_dir, run):
         finished = cli("finish")
         assert finished["stage_statuses"] == ["done"] * len(names)
         assert json.loads(get("/state"))["state"] == finished
+        cli("branch", "--id", "local", "--name", "Local route", "--parent", "Build",
+            "--mainline", "Keep information on the device.", "--stage", "Plan", "--stage", "Try")
+        route = cli("status", "--branch", "local", "--done", "Plan", "--active", "Try", "--label", "Verifying")
+        assert route["branch"] == "local" and "branches" not in route
+        branched = json.loads(get("/state"))["state"]
+        assert branched["stage_statuses"] == finished["stage_statuses"]
+        assert branched["branches"]["local"]["stage_labels"]["Try"] == "Verifying"
+        cli("branch", "--id", "local", "--archive")
+        assert cli("read", "--branch", "local")["archived"] is True
+        cli("branch", "--id", "local", "--restore")
+        assert "archived" not in cli("read", "--branch", "local")
         report = {
             "passed": True, "os": platform.system(), "python": platform.python_version(),
             "script": str(script), "state": str(state),
             "checks": ["packaged CLI", "Unicode and space paths", "detached start",
                        "verified server reuse", "packaged HTML in both languages",
                        "parallel stages", "substage labels and goals", "live HTTP updates",
-                       "completion preserves lifecycle"],
+                       "completion preserves lifecycle", "branch progress isolation and compact reads",
+                       "archive and restore preserve branch progress"],
         }
         (run / "runtime-report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -87,7 +87,7 @@ def check(browser=False):
         if browser:
             browser_env = {**os.environ, "MAINLINE_SCRIPT": str(installed / "mainline.py"),
                            "MAINLINE_PYTHON": sys.executable}
-            for suite in ("test_browser.cjs", "test_languages.cjs"):
+            for suite in ("test_browser.cjs", "test_languages.cjs", "test_branches_browser.cjs"):
                 result = subprocess.run(["node", str(ROOT / suite)], cwd=ROOT,
                                         env=browser_env, capture_output=True, text=True,
                                         encoding="utf-8", timeout=180)

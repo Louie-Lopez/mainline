@@ -35,7 +35,7 @@ Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目
 
 </details>
 
-项目出现明显不同的方案走向时，可以试试[支线实验](https://louie-lopez.github.io/mainline/branches.html?lang=zh)：从产生分岔的环节进入，分别查看各条路线，再回到主线。目前是使用示例数据的交互实验，安装版暂未加入支线创建与进度更新。
+需要分别保留不同方案时，可以在对应环节创建支线，独立记录目标与进展。默认仍显示主线，支线不会自动改变主线进度；暂时不用时可以收起，之后恢复，进度仍然保留。[体验支线演示](https://louie-lopez.github.io/mainline/branches.html?lang=zh)。
 
 ## 适合哪些环境？
 
@@ -106,7 +106,7 @@ python mainline.py start --state STATE
 更新 `mainline.py` 后需要重启原服务；只改网页时刷新即可。轴变淡表示连接或读取失败，当前保留的是上次成功读取的画面。
 
 ```sh
-python -m unittest -q test_mainline
+python -m unittest -q test_mainline test_branches
 python test_package_runtime.py
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium

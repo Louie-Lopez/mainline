@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Mainline — branch experiment</title>
+<title>Mainline — branch demo</title>
 <style>
 :root{color-scheme:light;--bg:#fcf9f3;--ink:#394b68;--line:#d8cbb4;--active:#233c63;--halo:#eee3cf;--accent:#ad874b;--heading:#203655;--badge:#f0e3c9;--badge-ink:#62491f}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg)}body{font:15px/1.5 system-ui,"Microsoft YaHei",sans-serif}
@@ -95,10 +95,15 @@ button.branch-access:focus-visible,.route-home:focus-visible,.route-switch:focus
 @media(max-width:520px){main{padding:38px 24px;gap:38px}.mainline{font-size:16px;line-height:1.85}#route-path{gap:7px;margin-bottom:-15px}.stage-details{font-size:13px}.route-switch{max-width:100%;flex-wrap:wrap;justify-content:center}}
 @media(prefers-reduced-motion:reduce){.branch-chevron{transition:none}}
 
+
+
+/* The shareable demo keeps the light appearance of the original preview. */
+:root{color-scheme:light}
+
 </style>
 </head>
 <body>
-<main><nav id="route-path" hidden></nav><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div></main><div id="branch-picker" role="dialog" hidden></div>
+<main><nav id="route-path" hidden></nav><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div><div id="branch-picker" role="dialog" hidden></div></main>
 <script>
 'use strict';
 const axis=document.getElementById('axis');
@@ -178,7 +183,7 @@ function renderDetails(value){
   }
   target.replaceChildren(fragment);target.hidden=!value;
 }
-function render(s,force=false){
+function renderAxis(s,force=false){
   if(!s || typeof s.task_id!=='string' || !Array.isArray(s.stages) || !s.stages.length || s.stages.some(x=>typeof x!=='string'||!x.trim())) throw Error('Invalid state');
   let statuses=s.stage_statuses;
   if(statuses===undefined){
@@ -234,7 +239,7 @@ function render(s,force=false){
     node.onclick=()=>{
       if(isSelected||(group&&expanded===name)){selected=null;expanded=null;}
       else{selected={parent,name};if(parent===null)expanded=group?name:null;}
-      render(currentState,true);
+      renderAxis(currentState,true);
       const buttons=[...axis.querySelectorAll('button')];
       (buttons.find(b=>b.dataset.key===key)||buttons.find(b=>b.dataset.key===stageKey(null,parent)))?.focus({preventScroll:true});
     };
@@ -259,25 +264,49 @@ function render(s,force=false){
   axis.replaceChildren(fragment);signature=next;renderBranchChrome();layout();
   if(focused)[...axis.querySelectorAll('button')].find(b=>b.dataset.key===focused)?.focus({preventScroll:true});
 }
-
-const branchSamples={"zh": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "打造自己的 AI 私人助理，让日程、资料和待办事项在日常生活中衔接起来。", "stages": ["明确需求", "整理资料", "打通任务", "真实试用", "稳定使用"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_mainlines": {"明确需求": "找出日常最需要帮助的事情，确定首版助理的能力范围。", "整理资料": "整理必要的个人资料和偏好，明确可访问的信息范围。", "打通任务": "让助理能够协助安排日程、查找资料和跟进事项。", "真实试用": "把已完成的能力放进日常生活，检验是否省心可靠。", "稳定使用": "解决试用中的关键问题，形成可以持续使用的个人助理。"}, "substages": {"打通任务": {"stages": ["日程安排", "资料查找", "事项跟进"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"日程安排": "整理时间安排，及时发现冲突和需要确认的事项。", "资料查找": "从自己的资料中找到答案，并能回到原文核对。", "事项跟进": "把约定和待办接续起来，清楚知道下一步要做什么。"}, "stage_details": {"资料查找": "支持按问题查找笔记与文档，回答时附上对应出处。"}}}, "stage_labels": {"打通任务": "探索方案", "真实试用": "试用已有能力"}}, "branches": [{"id": "cloud", "name": "云端接入", "parent": "打通任务", "mainline": "接入已有云端服务，让日程、资料和待办尽快协同起来。", "stages": ["连接服务", "串起任务", "核对权限", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"串起任务": "接通日程"}, "stage_mainlines": {"连接服务": "连接已有日历、笔记和待办服务。", "串起任务": "让会议安排、相关资料和后续待办衔接起来。", "核对权限": "确认每项服务能访问什么，重要操作由本人确认。", "日常试用": "用真实日程检验服务连接是否稳定、是否省心。"}, "stage_details": {"串起任务": "先从日历读取会议，再找出相关资料，最后生成会后待办。"}}, {"id": "local", "name": "本地运行", "parent": "打通任务", "mainline": "让助理在本机处理个人资料，并能在离线时完成常用任务。", "stages": ["整理本地资料", "本地检索", "离线任务", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"本地检索": "修复引用"}, "stage_mainlines": {"整理本地资料": "整理可供助理使用的本地笔记和文档。", "本地检索": "从本地资料找到答案，并准确指向原文。", "离线任务": "在断网时完成资料查询和待办整理。", "日常试用": "确认本地助理在常用设备上足够快、足够可靠。"}, "stage_details": {"本地检索": "已经能找到相关文档，正在修复回答引用跳错段落的问题。"}}]}, "en": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "Build a personal AI assistant that connects your calendar, knowledge, and everyday tasks.", "stages": ["Define needs", "Gather context", "Connect tasks", "Try it daily", "Keep it useful"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_labels": {"Connect tasks": "Exploring", "Try it daily": "Trying it"}, "stage_mainlines": {"Define needs": "Choose the everyday tasks where an assistant would help most.", "Gather context": "Organize personal information and decide what the assistant may access.", "Connect tasks": "Help with scheduling, finding information, and following up.", "Try it daily": "Use the working parts in daily life and see whether they save effort.", "Keep it useful": "Resolve the problems that matter and make the assistant reliable over time."}, "substages": {"Connect tasks": {"stages": ["Scheduling", "Find answers", "Follow up"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"Scheduling": "Keep plans organized and flag conflicts that need attention.", "Find answers": "Find answers in personal documents and link back to the original source.", "Follow up": "Connect commitments and tasks so the next step is clear."}, "stage_details": {"Find answers": "Search notes and documents by question, with sources attached to each answer."}}}}, "branches": [{"id": "cloud", "name": "Cloud services", "parent": "Connect tasks", "mainline": "Connect existing cloud services to bring calendars, documents, and tasks together quickly.", "stages": ["Connect services", "Link tasks", "Check access", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Link tasks": "Calendar"}, "stage_mainlines": {"Connect services": "Connect existing calendar, notes, and task services.", "Link tasks": "Connect meetings with relevant documents and follow-up tasks.", "Check access": "Check what each service can access and require approval for important actions.", "Try it daily": "Use real plans to check whether service connections are reliable and useful."}, "stage_details": {"Link tasks": "Read a meeting from the calendar, find relevant documents, then draft follow-up tasks."}}, {"id": "local", "name": "Local processing", "parent": "Connect tasks", "mainline": "Keep personal information on your device and make everyday tasks work offline.", "stages": ["Organize files", "Local search", "Offline tasks", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Local search": "Fixing links"}, "stage_mainlines": {"Organize files": "Organize the local notes and documents available to the assistant.", "Local search": "Find answers in local documents and point to the right source passage.", "Offline tasks": "Find information and organize tasks without an internet connection.", "Try it daily": "Check that the local assistant is fast and reliable on everyday devices."}, "stage_details": {"Local search": "Relevant documents can already be found. Fixing source links that open the wrong passage."}}]}};
 const branchText={
-  en:{title:'Mainline — branch experiment',home:'← Mainline',return:'Return to project mainline',path:'Current location',picker:'Choose a branch',current:'Viewing',exploring:'Exploring',count:n=>n+' branches',open:(parent,n)=>parent+', view '+n+' branches',route:name=>'Branch · '+name,switch:name=>'Current branch: '+name+', switch branch'},
-  zh:{title:'Mainline · 支线实验',home:'← 主线',return:'返回项目主线',path:'当前位置',picker:'选择支线',current:'当前查看',exploring:'探索中',count:n=>n+' 条支线',open:(parent,n)=>parent+'，查看 '+n+' 条支线',route:name=>'支线 · '+name,switch:name=>'当前支线：'+name+'，切换支线'}
+  en:{home:'← Mainline',return:'Return to project mainline',path:'Current location',picker:'Choose a branch',current:'Viewing',exploring:'Exploring',count:n=>n+(n===1?' branch':' branches'),open:(parent,n)=>parent+', view '+n+(n===1?' branch':' branches'),route:name=>'Branch · '+name,switch:name=>'Current branch: '+name+', switch branch'},
+  zh:{home:'← 主线',return:'返回项目主线',path:'当前位置',picker:'选择支线',current:'当前查看',exploring:'探索中',count:n=>n+' 条支线',open:(parent,n)=>parent+'，查看 '+n+' 条支线',route:name=>'支线 · '+name,switch:name=>'当前支线：'+name+'，切换支线'}
 }[language];
-const experiment=branchSamples[language];
-document.title=branchText.title;
 document.getElementById('route-path').setAttribute('aria-label',branchText.path);
 document.getElementById('branch-picker').setAttribute('aria-label',branchText.picker);
 
-// Branches are explicit sample routes. No background work or project writes.
+// Branches are explicit project records. Viewing never writes progress.
 const routePath=document.getElementById('route-path');
 const picker=document.getElementById('branch-picker');
 const routeViews=new Map();
-let route='main',pickerAnchor=null;
-const branchById=id=>experiment.branches.find(branch=>branch.id===id);
-const validRoute=id=>branchById(id)?id:'main';
-const routeFromUrl=()=>validRoute(location.hash.slice(1));
+let route='main',pickerAnchor=null,projectState=null,branchSignature='';
+const branchById=id=>own(projectState?.branches,id);
+const visibleBranches=()=>Object.entries(projectState?.branches||{}).filter(([,branch])=>!branch.archived);
+const validRoute=id=>branchById(id)&&!branchById(id).archived?id:'main';
+
+function validateBranches(s){
+  const branches=s.branches||{};
+  if(!branches||typeof branches!=='object'||Array.isArray(branches))throw Error('Invalid branches');
+  for(const [id,branch] of Object.entries(branches)){
+    if(!/^[a-z][a-z0-9-]{0,63}$/.test(id)||id==='main'||!branch||typeof branch!=='object'||Array.isArray(branch)||branch.branches!==undefined)throw Error('Invalid branch');
+    for(const field of ['name','parent','mainline'])if(typeof branch[field]!=='string'||!branch[field].trim()||/[\r\n]/.test(branch[field]))throw Error('Invalid branch text');
+    if(!s.stages.includes(branch.parent)||!Array.isArray(branch.stages)||!branch.stages.length||branch.stages.some(name=>typeof name!=='string'||!name.trim())||!Array.isArray(branch.stage_statuses)||branch.stage_statuses.length!==branch.stages.length||branch.stage_statuses.some(status=>!['pending','active','done'].includes(status))||(branch.archived!==undefined&&typeof branch.archived!=='boolean'))throw Error('Invalid branch state');
+    labelsFor(branch);mainlinesFor(branch);detailsFor(branch);
+  }
+}
+
+function render(s,force=false){
+  if(!s||!Array.isArray(s.stages)||typeof s.task_id!=='string')throw Error('Invalid state');
+  if(task&&task!==s.task_id)throw Error('Wrong task');
+  validateBranches(s);
+  const nextBranches=JSON.stringify(s.branches||{});
+  projectState=s;
+  if(route!=='main'&&validRoute(route)==='main'){
+    routeViews.delete(route);route='main';
+    const view=routeViews.get('main');selected=view?.selected??null;expanded=view?.expanded??null;
+    force=true;
+  }
+  const branch=route==='main'?null:branchById(route);
+  renderAxis(branch?{...branch,task_id:s.task_id}:s,force||nextBranches!==branchSignature);
+  branchSignature=nextBranches;
+}
+
 
 function closePicker(restoreFocus=false){
   picker.hidden=true;
@@ -291,15 +320,15 @@ function openPicker(anchor,parent){
   closePicker();
   pickerAnchor=anchor;
   picker.replaceChildren();
-  for(const branch of experiment.branches.filter(item=>item.parent===parent)){
+  for(const [identity,branch] of visibleBranches().filter(([,item])=>item.parent===parent)){
     const button=document.createElement('button');
     button.type='button';button.className='branch-choice';
-    button.dataset.route=branch.id;
+    button.dataset.route=identity;
     const name=document.createElement('span');name.textContent=branch.name;
-    const state=document.createElement('small');state.textContent=route===branch.id?branchText.current:branchText.exploring;
+    const state=document.createElement('small');state.textContent=route===identity?branchText.current:branch.stage_statuses.every(status=>status==='done')?text.done:branch.stage_statuses.every(status=>status==='pending')?text.pending:branchText.exploring;
     button.append(name,state);
-    if(route===branch.id)button.setAttribute('aria-current','true');
-    button.onclick=()=>navigate(branch.id);
+    if(route===identity)button.setAttribute('aria-current','true');
+    button.onclick=()=>navigate(identity);
     picker.append(button);
   }
   anchor.setAttribute('aria-expanded','true');
@@ -331,10 +360,10 @@ function chooserButton(label,parent,className){
 function renderBranchChrome(){
   closePicker();routePath.replaceChildren();routePath.hidden=route==='main';
   if(route==='main'){
-    for(const parent of new Set(experiment.branches.map(branch=>branch.parent))){
+    for(const parent of new Set(visibleBranches().map(([,branch])=>branch.parent))){
       const stage=[...axis.children].find(li=>li.querySelector(':scope > .node')?.dataset.stage===parent);
       if(!stage)continue;
-      const count=experiment.branches.filter(branch=>branch.parent===parent).length;
+      const count=visibleBranches().filter(([,branch])=>branch.parent===parent).length;
       const button=chooserButton(branchText.count(count),parent,'branch-access');
       button.setAttribute('aria-label',branchText.open(parent,count));
       stage.append(button);
@@ -357,9 +386,9 @@ function showRoute(id,moveFocus=false){
   route=validRoute(id);
   const view=routeViews.get(route);
   selected=view?.selected??null;expanded=view?.expanded??null;
-  const branch=branchById(route);
-  const state=branch?{...branch,task_id:experiment.project.task_id}:experiment.project;
-  render(state,true);axis.dataset.stale='false';
+  const branch=route==='main'?null:branchById(route);
+  const state=branch?{...branch,task_id:projectState.task_id}:projectState;
+  renderAxis(state,true);
   if(moveFocus){
     const target=branch?routePath.querySelector('.route-switch'):axis.querySelector('.branch-access');
     target?.focus({preventScroll:true});
@@ -369,7 +398,6 @@ function showRoute(id,moveFocus=false){
 function navigate(id){
   const next=validRoute(id);
   if(next===route){closePicker(true);return;}
-  history.pushState(null,'',location.pathname+location.search+(next==='main'?'':'#'+next));
   showRoute(next,true);
 }
 
@@ -391,8 +419,15 @@ document.addEventListener('focusin',event=>{
 });
 window.addEventListener('resize',()=>closePicker());
 window.addEventListener('scroll',()=>closePicker(),{passive:true});
-window.addEventListener('popstate',()=>showRoute(routeFromUrl()));
-showRoute(routeFromUrl());
+// Every page load starts on the mainline; route selection lives only in this page.
+
+
+const branchSamples={"zh": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "打造自己的 AI 私人助理，让日程、资料和待办事项在日常生活中衔接起来。", "stages": ["明确需求", "整理资料", "打通任务", "真实试用", "稳定使用"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_mainlines": {"明确需求": "找出日常最需要帮助的事情，确定首版助理的能力范围。", "整理资料": "整理必要的个人资料和偏好，明确可访问的信息范围。", "打通任务": "让助理能够协助安排日程、查找资料和跟进事项。", "真实试用": "把已完成的能力放进日常生活，检验是否省心可靠。", "稳定使用": "解决试用中的关键问题，形成可以持续使用的个人助理。"}, "substages": {"打通任务": {"stages": ["日程安排", "资料查找", "事项跟进"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"日程安排": "整理时间安排，及时发现冲突和需要确认的事项。", "资料查找": "从自己的资料中找到答案，并能回到原文核对。", "事项跟进": "把约定和待办接续起来，清楚知道下一步要做什么。"}, "stage_details": {"资料查找": "支持按问题查找笔记与文档，回答时附上对应出处。"}}}, "stage_labels": {"打通任务": "探索方案", "真实试用": "试用已有能力"}}, "branches": [{"id": "cloud", "name": "云端接入", "parent": "打通任务", "mainline": "接入已有云端服务，让日程、资料和待办尽快协同起来。", "stages": ["连接服务", "串起任务", "核对权限", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"串起任务": "接通日程"}, "stage_mainlines": {"连接服务": "连接已有日历、笔记和待办服务。", "串起任务": "让会议安排、相关资料和后续待办衔接起来。", "核对权限": "确认每项服务能访问什么，重要操作由本人确认。", "日常试用": "用真实日程检验服务连接是否稳定、是否省心。"}, "stage_details": {"串起任务": "先从日历读取会议，再找出相关资料，最后生成会后待办。"}}, {"id": "local", "name": "本地运行", "parent": "打通任务", "mainline": "让助理在本机处理个人资料，并能在离线时完成常用任务。", "stages": ["整理本地资料", "本地检索", "离线任务", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"本地检索": "修复引用"}, "stage_mainlines": {"整理本地资料": "整理可供助理使用的本地笔记和文档。", "本地检索": "从本地资料找到答案，并准确指向原文。", "离线任务": "在断网时完成资料查询和待办整理。", "日常试用": "确认本地助理在常用设备上足够快、足够可靠。"}, "stage_details": {"本地检索": "已经能找到相关文档，正在修复回答引用跳错段落的问题。"}}]}, "en": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "Build a personal AI assistant that connects your calendar, knowledge, and everyday tasks.", "stages": ["Define needs", "Gather context", "Connect tasks", "Try it daily", "Keep it useful"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_labels": {"Connect tasks": "Exploring", "Try it daily": "Trying it"}, "stage_mainlines": {"Define needs": "Choose the everyday tasks where an assistant would help most.", "Gather context": "Organize personal information and decide what the assistant may access.", "Connect tasks": "Help with scheduling, finding information, and following up.", "Try it daily": "Use the working parts in daily life and see whether they save effort.", "Keep it useful": "Resolve the problems that matter and make the assistant reliable over time."}, "substages": {"Connect tasks": {"stages": ["Scheduling", "Find answers", "Follow up"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"Scheduling": "Keep plans organized and flag conflicts that need attention.", "Find answers": "Find answers in personal documents and link back to the original source.", "Follow up": "Connect commitments and tasks so the next step is clear."}, "stage_details": {"Find answers": "Search notes and documents by question, with sources attached to each answer."}}}}, "branches": [{"id": "cloud", "name": "Cloud services", "parent": "Connect tasks", "mainline": "Connect existing cloud services to bring calendars, documents, and tasks together quickly.", "stages": ["Connect services", "Link tasks", "Check access", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Link tasks": "Calendar"}, "stage_mainlines": {"Connect services": "Connect existing calendar, notes, and task services.", "Link tasks": "Connect meetings with relevant documents and follow-up tasks.", "Check access": "Check what each service can access and require approval for important actions.", "Try it daily": "Use real plans to check whether service connections are reliable and useful."}, "stage_details": {"Link tasks": "Read a meeting from the calendar, find relevant documents, then draft follow-up tasks."}}, {"id": "local", "name": "Local processing", "parent": "Connect tasks", "mainline": "Keep personal information on your device and make everyday tasks work offline.", "stages": ["Organize files", "Local search", "Offline tasks", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Local search": "Fixing links"}, "stage_mainlines": {"Organize files": "Organize the local notes and documents available to the assistant.", "Local search": "Find answers in local documents and point to the right source passage.", "Offline tasks": "Find information and organize tasks without an internet connection.", "Try it daily": "Check that the local assistant is fast and reliable on everyday devices."}, "stage_details": {"Local search": "Relevant documents can already be found. Fixing source links that open the wrong passage."}}]}};
+const experiment=branchSamples[language];
+document.title=language==='zh'?'Mainline · 支线演示':'Mainline — branch demo';
+const branches=Object.fromEntries(experiment.branches.map(({id,...branch})=>[id,branch]));
+render({...experiment.project,branches});
+axis.dataset.stale='false';
 
 </script>
 </body>

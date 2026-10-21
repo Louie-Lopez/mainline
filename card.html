@@ -51,10 +51,56 @@ button.node[aria-pressed="true"]>.label{text-decoration:underline;text-decoratio
 .axis[data-layout="vertical"] .activity{max-width:45%;white-space:normal;overflow-wrap:anywhere;text-align:center}
 @media(prefers-color-scheme:dark){:root{--bg:#101a30;--ink:#c2cde1;--line:#43516c;--active:#e5c78e;--halo:#28334b;--accent:#bd9a61;--heading:#f3eada;--badge:#e5c78e;--badge-ink:#302311}}
 @media(prefers-reduced-motion:reduce){.axis{transition:none}}
+
+/* A quiet paper-and-ink treatment; no extra panels around the project. */
+:root{--bg:#fcfaf5;--ink:#4c5b70;--line:#ded5c5;--active:#294565;--halo:#f0e8d9;--accent:#a08049;--heading:#243c58;--badge:#f5eddd;--badge-ink:#745a2e}
+[hidden]{display:none!important}
+body{-webkit-font-smoothing:antialiased}
+main{padding:48px 28px;gap:48px}
+.mainline{max-width:860px;font-size:17px;font-weight:500;line-height:1.85;letter-spacing:.015em;text-wrap:balance}
+.label{margin-top:18px;line-height:1.6}
+.stage[data-status="active"]{font-weight:650}
+.stage[data-status="active"]>.node>.dot{border-width:5px;box-shadow:0 0 0 5px var(--bg),0 0 0 6px #c0a570}
+.activity{top:-43px;padding:0 10px;line-height:23px;border:1px solid #e9dcc3;border-radius:100px;font-size:11px;font-weight:500}
+.stage-details{max-width:580px;line-height:1.9;color:var(--ink);text-wrap:pretty}
+.children{isolation:isolate}
+.children::before{z-index:-1;border-color:#e4dccf;background:#fffdf8;border-radius:14px}
+.axis[data-layout="vertical"] .activity{margin-top:-2px}
+.axis[data-layout="vertical"] .stage{min-height:92px}
+.axis[data-layout="vertical"]>.stage:last-child{min-height:24px}
+.axis[data-layout="vertical"]>.expanded{min-height:0}
+.axis[data-layout="vertical"]>.expanded>.children{margin-top:18px}
+.axis[data-layout="vertical"]>.expanded>.children::before{inset:-12px -4px -12px 0}
+button.branch-access,.route-home,.route-switch,.branch-choice{font:inherit;cursor:pointer;color:var(--ink);touch-action:manipulation}
+button.branch-access{display:flex;align-items:center;gap:7px;min-height:30px;border:1px solid #e2d7c3;background:#f7f2e8;border-radius:100px;font-size:12px;line-height:22px;padding:3px 11px;margin-top:15px;font-weight:450;white-space:nowrap;color:#715b36}
+.branch-access:hover,.route-switch:hover{background:#eee5d5;border-color:#c9b58e;color:var(--heading)}
+.route-home:hover{color:var(--active);text-decoration:underline;text-underline-offset:5px}
+button.branch-access:focus-visible,.route-home:focus-visible,.route-switch:focus-visible,.branch-choice:focus-visible{outline:2px solid var(--active);outline-offset:4px}
+.branch-access svg,.route-switch svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.branch-chevron{font-size:10px;color:#967c50;transition:transform .14s}
+[aria-expanded="true"]>.branch-chevron{transform:rotate(180deg)}
+.axis[data-layout="horizontal"]>.expanded>.branch-access{margin-top:28px}
+.axis[data-layout="vertical"]>.stage>.branch-access{position:absolute;left:58px;top:34px;margin-top:0}
+.axis[data-layout="vertical"]>.expanded>.branch-access{position:static;margin:0 0 28px 46px}
+#route-path{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;max-width:100%;color:var(--ink);font-size:12px;margin-bottom:-24px;line-height:1.8}
+.route-home{border:0;background:none;padding:4px 2px;font-size:12px;border-radius:4px}
+.route-separator{color:#b6a68a;font-size:15px}
+.route-switch{display:inline-flex;align-items:center;gap:7px;border:1px solid #e2d7c3;background:#f7f2e8;color:#715b36;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:500}
+#branch-picker{position:fixed;z-index:10;width:264px;max-width:calc(100vw - 32px);padding:6px;border:1px solid #e2d8c8;border-radius:14px;background:#fffdf8;box-shadow:0 12px 32px #3a311514,0 2px 5px #3a311506}
+.branch-choice{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;border:1px solid transparent;background:transparent;text-align:left;border-radius:9px;padding:13px 12px;font-size:14px;line-height:1.5}
+.branch-choice+.branch-choice{margin-top:3px}
+.branch-choice:hover,.branch-choice[aria-current="true"]{background:#f4eddf}
+.branch-choice[aria-current="true"]{border-color:#e5d8c1}
+.branch-choice small{font-size:11px;color:#796749;font-weight:400;white-space:nowrap}
+@media(max-width:520px){main{padding:38px 24px;gap:38px}.mainline{font-size:16px;line-height:1.85}#route-path{gap:7px;margin-bottom:-15px}.stage-details{font-size:13px}.route-switch{max-width:100%;flex-wrap:wrap;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.branch-chevron{transition:none}}
+
+@media(prefers-color-scheme:dark){:root{--bg:#101a30;--ink:#c2cde1;--line:#43516c;--active:#e5c78e;--halo:#28334b;--accent:#bd9a61;--heading:#f3eada;--badge:#2c3545;--badge-ink:#e5c78e}.activity{border-color:#52516a}.children::before{background:#152039;border-color:#43516c}button.branch-access,.route-switch{background:#232d41;color:#e5c78e;border-color:#52516a}.branch-access:hover,.route-switch:hover{background:#333c4e;color:#f3eada}#branch-picker{background:#152039;border-color:#43516c}.branch-choice:hover,.branch-choice[aria-current="true"]{background:#28334b}.branch-choice[aria-current="true"]{border-color:#68604d}.branch-choice small{color:#d9c49a}}
+
 </style>
 </head>
 <body>
-<main><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div></main>
+<main><nav id="route-path" hidden></nav><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div><div id="branch-picker" role="dialog" hidden></div></main>
 <script>
 'use strict';
 const axis=document.getElementById('axis');
@@ -74,7 +120,7 @@ const stageKey=(parent,name)=>JSON.stringify([parent,name]);
 function layout(){
   const longest=stages.reduce((n,s)=>Math.max(n,Array.from(s).length),0);
   const longestBadge=[...axis.querySelectorAll('.activity')].reduce((n,e)=>Math.max(n,Array.from(e.textContent).length),0);
-  const perStage=Math.max(106,Math.min(180,longest*15+24),longestBadge*11+24);
+  const perStage=Math.max(106,Math.min(180,longest*(language==='zh'?15:8)+24),longestBadge*11+24);
   axis.dataset.layout=Math.min(1100,window.innerWidth-56)>=Math.max(380,stages.length*perStage)?'horizontal':'vertical';
   const horizontal=axis.dataset.layout==='horizontal';
   [...axis.children].forEach(li=>li.style.flex=horizontal&&li.classList.contains('expanded')?li.dataset.count:'');
@@ -134,7 +180,7 @@ function renderDetails(value){
   }
   target.replaceChildren(fragment);target.hidden=!value;
 }
-function render(s,force=false){
+function renderAxis(s,force=false){
   if(!s || typeof s.task_id!=='string' || !Array.isArray(s.stages) || !s.stages.length || s.stages.some(x=>typeof x!=='string'||!x.trim())) throw Error('Invalid state');
   let statuses=s.stage_statuses;
   if(statuses===undefined){
@@ -190,7 +236,7 @@ function render(s,force=false){
     node.onclick=()=>{
       if(isSelected||(group&&expanded===name)){selected=null;expanded=null;}
       else{selected={parent,name};if(parent===null)expanded=group?name:null;}
-      render(currentState,true);
+      renderAxis(currentState,true);
       const buttons=[...axis.querySelectorAll('button')];
       (buttons.find(b=>b.dataset.key===key)||buttons.find(b=>b.dataset.key===stageKey(null,parent)))?.focus({preventScroll:true});
     };
@@ -212,9 +258,166 @@ function render(s,force=false){
     return li;
   }
   s.stages.forEach((name,i)=>fragment.append(makeStage(name,statuses[i],statuses,Object.hasOwn(subs,name)?subs[name]:null,Object.hasOwn(labels,name)?labels[name]:null)));
-  axis.replaceChildren(fragment);signature=next;layout();
+  axis.replaceChildren(fragment);signature=next;renderBranchChrome();layout();
   if(focused)[...axis.querySelectorAll('button')].find(b=>b.dataset.key===focused)?.focus({preventScroll:true});
 }
+const branchText={
+  en:{home:'← Mainline',return:'Return to project mainline',path:'Current location',picker:'Choose a branch',current:'Viewing',exploring:'Exploring',count:n=>n+(n===1?' branch':' branches'),open:(parent,n)=>parent+', view '+n+(n===1?' branch':' branches'),route:name=>'Branch · '+name,switch:name=>'Current branch: '+name+', switch branch'},
+  zh:{home:'← 主线',return:'返回项目主线',path:'当前位置',picker:'选择支线',current:'当前查看',exploring:'探索中',count:n=>n+' 条支线',open:(parent,n)=>parent+'，查看 '+n+' 条支线',route:name=>'支线 · '+name,switch:name=>'当前支线：'+name+'，切换支线'}
+}[language];
+document.getElementById('route-path').setAttribute('aria-label',branchText.path);
+document.getElementById('branch-picker').setAttribute('aria-label',branchText.picker);
+
+// Branches are explicit project records. Viewing never writes progress.
+const routePath=document.getElementById('route-path');
+const picker=document.getElementById('branch-picker');
+const routeViews=new Map();
+let route='main',pickerAnchor=null,projectState=null,branchSignature='';
+const branchById=id=>own(projectState?.branches,id);
+const visibleBranches=()=>Object.entries(projectState?.branches||{}).filter(([,branch])=>!branch.archived);
+const validRoute=id=>branchById(id)&&!branchById(id).archived?id:'main';
+
+function validateBranches(s){
+  const branches=s.branches||{};
+  if(!branches||typeof branches!=='object'||Array.isArray(branches))throw Error('Invalid branches');
+  for(const [id,branch] of Object.entries(branches)){
+    if(!/^[a-z][a-z0-9-]{0,63}$/.test(id)||id==='main'||!branch||typeof branch!=='object'||Array.isArray(branch)||branch.branches!==undefined)throw Error('Invalid branch');
+    for(const field of ['name','parent','mainline'])if(typeof branch[field]!=='string'||!branch[field].trim()||/[\r\n]/.test(branch[field]))throw Error('Invalid branch text');
+    if(!s.stages.includes(branch.parent)||!Array.isArray(branch.stages)||!branch.stages.length||branch.stages.some(name=>typeof name!=='string'||!name.trim())||!Array.isArray(branch.stage_statuses)||branch.stage_statuses.length!==branch.stages.length||branch.stage_statuses.some(status=>!['pending','active','done'].includes(status))||(branch.archived!==undefined&&typeof branch.archived!=='boolean'))throw Error('Invalid branch state');
+    labelsFor(branch);mainlinesFor(branch);detailsFor(branch);
+  }
+}
+
+function render(s,force=false){
+  if(!s||!Array.isArray(s.stages)||typeof s.task_id!=='string')throw Error('Invalid state');
+  if(task&&task!==s.task_id)throw Error('Wrong task');
+  validateBranches(s);
+  const nextBranches=JSON.stringify(s.branches||{});
+  projectState=s;
+  if(route!=='main'&&validRoute(route)==='main'){
+    routeViews.delete(route);route='main';
+    const view=routeViews.get('main');selected=view?.selected??null;expanded=view?.expanded??null;
+    force=true;
+  }
+  const branch=route==='main'?null:branchById(route);
+  renderAxis(branch?{...branch,task_id:s.task_id}:s,force||nextBranches!==branchSignature);
+  branchSignature=nextBranches;
+}
+
+
+function closePicker(restoreFocus=false){
+  picker.hidden=true;
+  pickerAnchor?.setAttribute('aria-expanded','false');
+  if(restoreFocus&&pickerAnchor?.isConnected)pickerAnchor.focus({preventScroll:true});
+  pickerAnchor=null;
+}
+
+function openPicker(anchor,parent){
+  if(!picker.hidden&&pickerAnchor===anchor){closePicker(true);return;}
+  closePicker();
+  pickerAnchor=anchor;
+  picker.replaceChildren();
+  for(const [identity,branch] of visibleBranches().filter(([,item])=>item.parent===parent)){
+    const button=document.createElement('button');
+    button.type='button';button.className='branch-choice';
+    button.dataset.route=identity;
+    const name=document.createElement('span');name.textContent=branch.name;
+    const state=document.createElement('small');state.textContent=route===identity?branchText.current:branch.stage_statuses.every(status=>status==='done')?text.done:branch.stage_statuses.every(status=>status==='pending')?text.pending:branchText.exploring;
+    button.append(name,state);
+    if(route===identity)button.setAttribute('aria-current','true');
+    button.onclick=()=>navigate(identity);
+    picker.append(button);
+  }
+  anchor.setAttribute('aria-expanded','true');
+  picker.hidden=false;
+  const rect=anchor.getBoundingClientRect();
+  const width=picker.offsetWidth,height=picker.offsetHeight;
+  picker.style.left=Math.max(16,Math.min(window.innerWidth-width-16,rect.left+rect.width/2-width/2))+'px';
+  const preferredTop=rect.bottom+8;
+  picker.style.top=Math.max(16,preferredTop+height<window.innerHeight-16?preferredTop:rect.top-height-8)+'px';
+  (picker.querySelector('[aria-current]')||picker.querySelector('button'))?.focus({preventScroll:true});
+}
+
+function chooserButton(label,parent,className){
+  const button=document.createElement('button');button.type='button';
+  button.className=className;
+  const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  icon.setAttribute('viewBox','0 0 16 16');icon.setAttribute('aria-hidden','true');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M4 3v10M4 9c0-4 8-2 8-6M2 3h4M2 13h4M10 3h4');icon.append(path);
+  const name=document.createElement('span');name.textContent=label;
+  const chevron=document.createElement('span');chevron.className='branch-chevron';chevron.textContent='⌄';chevron.setAttribute('aria-hidden','true');
+  button.append(icon,name,chevron);
+  button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded','false');
+  button.setAttribute('aria-controls','branch-picker');
+  button.onclick=()=>openPicker(button,parent);
+  return button;
+}
+
+function renderBranchChrome(){
+  closePicker();routePath.replaceChildren();routePath.hidden=route==='main';
+  if(route==='main'){
+    for(const parent of new Set(visibleBranches().map(([,branch])=>branch.parent))){
+      const stage=[...axis.children].find(li=>li.querySelector(':scope > .node')?.dataset.stage===parent);
+      if(!stage)continue;
+      const count=visibleBranches().filter(([,branch])=>branch.parent===parent).length;
+      const button=chooserButton(branchText.count(count),parent,'branch-access');
+      button.setAttribute('aria-label',branchText.open(parent,count));
+      stage.append(button);
+    }
+    return;
+  }
+  const branch=branchById(route);
+  const home=document.createElement('button');home.type='button';home.className='route-home';
+  home.textContent=branchText.home;home.setAttribute('aria-label',branchText.return);home.onclick=()=>navigate('main');
+  const separator=document.createElement('span');separator.className='route-separator';separator.textContent='›';separator.setAttribute('aria-hidden','true');
+  const parent=document.createElement('span');parent.textContent=branch.parent;
+  const next=separator.cloneNode(true);
+  const choices=chooserButton(branchText.route(branch.name),branch.parent,'route-switch');
+  choices.setAttribute('aria-label',branchText.switch(branch.name));
+  routePath.append(home,separator,parent,next,choices);
+}
+
+function showRoute(id,moveFocus=false){
+  routeViews.set(route,{selected,expanded});
+  route=validRoute(id);
+  const view=routeViews.get(route);
+  selected=view?.selected??null;expanded=view?.expanded??null;
+  const branch=route==='main'?null:branchById(route);
+  const state=branch?{...branch,task_id:projectState.task_id}:projectState;
+  renderAxis(state,true);
+  if(moveFocus){
+    const target=branch?routePath.querySelector('.route-switch'):axis.querySelector('.branch-access');
+    target?.focus({preventScroll:true});
+  }
+}
+
+function navigate(id){
+  const next=validRoute(id);
+  if(next===route){closePicker(true);return;}
+  showRoute(next,true);
+}
+
+document.addEventListener('pointerdown',event=>{
+  if(!picker.hidden&&!picker.contains(event.target)&&!pickerAnchor?.contains(event.target))closePicker();
+});
+document.addEventListener('keydown',event=>{
+  if(picker.hidden)return;
+  if(event.key==='Escape'){event.preventDefault();closePicker(true);return;}
+  const buttons=[...picker.querySelectorAll('button')];
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+    event.preventDefault();
+    const offset=event.key==='ArrowDown'?1:-1;
+    buttons[(buttons.indexOf(document.activeElement)+offset+buttons.length)%buttons.length]?.focus();
+  }
+});
+document.addEventListener('focusin',event=>{
+  if(!picker.hidden&&!picker.contains(event.target)&&event.target!==pickerAnchor)closePicker();
+});
+window.addEventListener('resize',()=>closePicker());
+window.addEventListener('scroll',()=>closePicker(),{passive:true});
+// Every page load starts on the mainline; route selection lives only in this page.
+
 let refreshTimer=null,activeRequest=null;
 async function refresh(){
   clearTimeout(refreshTimer);

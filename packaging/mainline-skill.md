@@ -18,7 +18,7 @@ Read existing state once to resume. For a new project identify its agreed outcom
 ```text
 python TOOL/mainline.py init --state STATE --task-id ID --mainline "Deliver a reliable application that solves the agreed problem." --stage Define --stage Design --stage Build --stage Validate --stage Deliver
 python TOOL/mainline.py start --state STATE
-python TOOL/mainline.py read --state STATE
+python TOOL/mainline.py read --state STATE --overview
 ```
 
 `start` returns a loopback URL and reuses a verified existing server. In Codex, use `open_in_codex` with a browser target, preferably the current chat's bottom panel, when available. Otherwise show the URL. Queued is not proof that a panel opened. Do not reopen it for routine updates. The browser must reach the server's machine; remote/cloud environments need an explicitly configured connection.
@@ -62,6 +62,22 @@ python TOOL/mainline.py describe --state STATE --parent Build --stage View --mai
 A goal explains what a stage achieves, not its current activity label. Missing stage goals fall back to the nearest parent/project goal. Optional `--details` adds a brief description of scope, contents, or outputs; it requires `--stage` and may be updated alone. Missing details stay hidden and never borrow parent text; an empty string clears them. Only the selected stage's details appear. Avoid repeating status or adding descriptions without useful content. Stable scope needs no repeated reads or writes.
 
 Choose the description's form from its actual logic. Keep a connected explanation as prose; use blank lines between distinct paragraphs. Use `1. ` lines only for ordered steps, `- ` lines for independent items, and two-space indentation only for genuine child points. Mix a short introduction with a list when helpful. The viewer renders these explicit markers; it does not infer structure. Prefer a few short sentences or items. Remove repetition before adding structure; do not force headings, parallel categories, or nested lists onto a simple explanation. Do not turn the description into an activity log. Literal newlines belong in the `--details` argument; HTML and other Markdown are displayed as text.
+
+## Keep distinct routes only when needed
+
+Default to the mainline. Use substages for sequential or parallel work within the same approach. Create a branch only when the user explicitly requests one, or clearly different approaches need to be preserved and pursued separately. A brief comparison or quick experiment usually stays in its current stage. Branches are optional, anchored to a mainline stage, and never created merely to record a side question. Do not automatically launch agents or ongoing work for them.
+
+```text
+python TOOL/mainline.py branch --state STATE --id local --parent Build --name "Local processing" --mainline "Keep personal information on the device." --stage Organize --stage Search --stage Verify
+python TOOL/mainline.py status --state STATE --branch local --done Organize --active Search --label Fixing
+python TOOL/mainline.py read --state STATE --branch local
+```
+
+Use stable lowercase IDs for commands and names in the user's language for display. Branches have their own goal, stages, labels, descriptions, and optional substages. `status`, `position`, `subdivide`, `describe`, `replan`, and `finish` accept `--branch ID`; `--parent` still means a substage parent within that route. Branch completion never changes the mainline or other routes. After choosing an approach, update the mainline explicitly according to actual progress; there is no automatic merge.
+
+Resume with `read --overview`: it returns mainline progress and a small branch index without branch contents. Read only the route needed with `read --branch ID` when its state is not already known. Scoped commands return that route rather than every branch. The page initially shows the mainline; click the small branch entry to switch views. Reloading returns to the mainline. Viewing and switching do not write progress or call a model.
+
+Use `branch --id ID --archive` to hide an unused route while retaining all its progress, and `branch --id ID --restore` to bring it back. Restore before updating an archived route. `branch --id ID --parent STAGE` can reanchor a route to another existing mainline stage; `--name` and `--mainline` update its wording. Stage changes still require `replan --branch ID --reason`. Mainline replanning preserves branches and refuses to remove a stage that still anchors one. No nested branches or automatic copying of the whole project.
 
 ## Recovery
 

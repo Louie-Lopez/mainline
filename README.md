@@ -35,7 +35,7 @@ The axis shows the order of project stages, rather than time spent. Progress com
 
 </details>
 
-For projects with distinct possible directions, try the [branch experiment](https://louie-lopez.github.io/mainline/branches.html?lang=en). It keeps alternative routes under the stage where they diverge, with a separate view for each. This is an early interaction demo with sample data; branch creation and progress updates are not part of the installed tool yet.
+When different approaches need their own progress, keep them as optional branches under the stage where they diverge. The view opens on the mainline; each branch has its own goal and stages, and never changes mainline progress automatically. Unused routes can be hidden and restored with their progress intact. [Try the branch demo](https://louie-lopez.github.io/mainline/branches.html?lang=en).
 
 ## Where it works
 
@@ -106,7 +106,7 @@ Open the returned URL. Each project uses a separate state file, with one coordin
 After changing `mainline.py`, restart its existing server; refreshing the browser is sufficient only for HTML changes. A dimmed axis means the last known view is being retained after a connection or read failure.
 
 ```sh
-python -m unittest -q test_mainline
+python -m unittest -q test_mainline test_branches
 python test_package_runtime.py
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium

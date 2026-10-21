@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import re
 from socketserver import TCPServer
 import subprocess
 import sys
@@ -54,7 +55,7 @@ def validate_state(state):
     if is_legacy(state):
         raise ValueError("Legacy state: explicitly migrate with replan --stage ... --current ... --reason ...")
     if not isinstance(state, dict) or not (
-            set(state) - {"mainline", "substages", "stage_labels", "stage_mainlines", "stage_details"} == STATE_FIELDS
+            set(state) - {"mainline", "substages", "stage_labels", "stage_mainlines", "stage_details", "branches"} == STATE_FIELDS
             or set(state) - {"mainline"} == POINTER_FIELDS):
         raise ValueError("Missing or unknown state fields")
     nonempty(state["task_id"], "task_id")
@@ -107,7 +108,97 @@ def validate_state(state):
     if type(state["revision"]) is not int or state["revision"] < 1:
         raise ValueError("revision must be a positive integer")
     validate_time(state["updated_at"], "updated_at")
+    branches = state.get("branches", {})
+    if not isinstance(branches, dict):
+        raise ValueError("branches must map stable IDs to routes")
+    for identity, branch in branches.items():
+        validate_branch_id(identity)
+        required = {"name", "parent", "mainline", "stages", "stage_statuses"}
+        optional = {"substages", "stage_labels", "stage_mainlines", "stage_details", "archived"}
+        if not isinstance(branch, dict) or set(branch) - optional != required:
+            raise ValueError("Branches require a name, parent, goal, and stages; nested branches are not supported")
+        for field in ("name", "parent", "mainline"):
+            nonempty(branch[field], "branch " + field)
+            if branch[field] != branch[field].strip() or len(branch[field].splitlines()) != 1:
+                raise ValueError("Branch names, parents, and goals must be single-line text")
+        if branch["parent"] not in state["stages"]:
+            raise ValueError("Branch parent must be an existing mainline stage")
+        if "archived" in branch and type(branch["archived"]) is not bool:
+            raise ValueError("archived must be a boolean")
+        route = {key: value for key, value in branch.items() if key not in {"name", "parent", "archived"}}
+        validate_state(dict(route, task_id=state["task_id"], revision=state["revision"], updated_at=state["updated_at"]))
     return state
+
+
+def validate_branch_id(identity):
+    if not isinstance(identity, str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", identity) or identity == "main":
+        raise ValueError("Branch ID must start with a lowercase letter, use letters/digits/hyphens, and be at most 64 characters; main is reserved")
+
+
+def read_scope(path, branch=None, *, writing=True):
+    root = read_state(path)
+    if branch is None:
+        return root, root
+    validate_branch_id(branch)
+    if branch not in root.get("branches", {}):
+        raise ValueError(f"Unknown branch: {branch}")
+    route = root["branches"][branch]
+    if writing and route.get("archived", False):
+        raise ValueError("Restore the archived branch before updating it")
+    return root, route
+
+
+def commit_scope(path, root, route, branch=None):
+    if branch is None:
+        return commit_state(path, root, route)
+    branches = dict(root["branches"])
+    branches[branch] = route
+    return commit_state(path, root, dict(root, branches=branches))
+
+
+def overview_state(state):
+    overview = {key: value for key, value in state.items() if key != "branches"}
+    if state.get("branches"):
+        overview["branch_index"] = {
+            identity: {key: route[key] for key in ("name", "parent", "archived") if key in route}
+            for identity, route in state["branches"].items()
+        }
+    return overview
+
+
+def branch_state(path, identity, *, name=None, parent=None, mainline=None, stages=None, current=None, archive=False, restore=False):
+    validate_branch_id(identity)
+    old = read_state(path)
+    branches = dict(old.get("branches", {}))
+    existing = branches.get(identity)
+    if archive or restore:
+        if archive and restore or any(value is not None for value in (name, parent, mainline, stages, current)):
+            raise ValueError("Archive/restore cannot be combined with route edits")
+        if existing is None:
+            raise ValueError(f"Unknown branch: {identity}")
+        route = dict(existing)
+        route.pop("archived", None)
+        if archive:
+            route["archived"] = True
+    elif existing is not None:
+        if stages is not None or current is not None:
+            raise ValueError("Branch already exists; use status or replan --branch to change its stages")
+        if existing.get("archived", False):
+            raise ValueError("Restore the archived branch before updating it")
+        route = dict(existing)
+        for key, value in (("name", name), ("parent", parent), ("mainline", mainline)):
+            if value is not None:
+                nonempty(value, "branch " + key)
+                route[key] = value.strip()
+    else:
+        for value, field in ((name, "--name"), (parent, "--parent"), (mainline, "--mainline")):
+            nonempty(value, field + " for a new branch")
+        stages = normalize_stages(stages)
+        selected = {0} if current is None else selected_indices(stages, current)
+        route = {"name": name.strip(), "parent": parent.strip(), "mainline": mainline.strip(),
+                 "stages": stages, "stage_statuses": ["active" if i in selected else "pending" for i in range(len(stages))]}
+    branches[identity] = route
+    return commit_state(path, old, dict(old, branches=branches))
 
 
 def aggregate_status(statuses):
@@ -272,18 +363,18 @@ def commit_state(path, old, state):
     return state
 
 
-def position_state(path, current):
-    old = read_state(path)
+def position_state(path, current, *, branch=None):
+    root, old = read_scope(path, branch)
     selected = selected_indices(old["stages"], current)
     statuses = ["active" if i in selected else "pending" if status == "active" else status
                 for i, status in enumerate(old["stage_statuses"])]
     changed = [i for i, status in enumerate(statuses) if status != old["stage_statuses"][i]]
     state = clear_labels(dict(old, stage_statuses=statuses), changed)
-    return commit_state(path, old, sync_parent_labels(state))
+    return commit_scope(path, root, sync_parent_labels(state), branch)
 
 
-def status_state(path, *, active=None, done=None, pending=None, parent=None, label=None):
-    old = read_state(path)
+def status_state(path, *, active=None, done=None, pending=None, parent=None, label=None, branch=None):
+    root, old = read_scope(path, branch)
     group = old
     if parent is not None:
         parent = old["stages"][stage_index(old["stages"], parent)]
@@ -315,28 +406,28 @@ def status_state(path, *, active=None, done=None, pending=None, parent=None, lab
     if target is not None:
         updated = with_labels(updated, dict(updated.get("stage_labels", {}), **{target: label}))
     if parent is not None:
-        return commit_substages(path, old, parent, updated)
-    return commit_state(path, old, sync_parent_labels(updated))
+        return commit_substages(path, old, parent, updated, root=root, branch=branch)
+    return commit_scope(path, root, sync_parent_labels(updated), branch)
 
 
-def commit_substages(path, old, parent, group):
+def commit_substages(path, old, parent, group, *, root=None, branch=None):
     substages = dict(old.get("substages", {}))
     substages[parent] = group
     statuses = list(old["stage_statuses"])
     statuses[old["stages"].index(parent)] = aggregate_status(group["stage_statuses"])
     state = dict(old, substages=substages, stage_statuses=statuses)
-    return commit_state(path, old, sync_parent_labels(state))
+    return commit_scope(path, old if root is None else root, sync_parent_labels(state), branch)
 
 
-def subdivide_state(path, parent, stages, current=None, reason=None):
-    old = read_state(path)
+def subdivide_state(path, parent, stages, current=None, reason=None, *, branch=None):
+    root, old = read_scope(path, branch)
     parent = old["stages"][stage_index(old["stages"], parent)]
     stages = normalize_stages(stages)
     selected = None if current is None else selected_indices(stages, current)
     existing = old.get("substages", {}).get(parent)
     if existing is not None and existing["stages"] == stages:
         if selected is None:
-            return old
+            return root
         statuses = ["active" if i in selected else "pending" if status == "active" else status
                     for i, status in enumerate(existing["stage_statuses"])]
         changed = [i for i, status in enumerate(statuses) if status != existing["stage_statuses"][i]]
@@ -352,19 +443,19 @@ def subdivide_state(path, parent, stages, current=None, reason=None):
         else:
             statuses = [parent_status] * len(stages)
         group = {"stages": stages, "stage_statuses": statuses}
-    return commit_substages(path, old, parent, group)
+    return commit_substages(path, old, parent, group, root=root, branch=branch)
 
 
-def finish_state(path):
-    old = read_state(path)
+def finish_state(path, *, branch=None):
+    root, old = read_scope(path, branch)
     statuses = old["stage_statuses"]
     if any(status != "done" for status in statuses[:-1]) or statuses[-1] not in ("active", "done"):
         raise ValueError("finish requires every earlier stage done and the last stage active or done")
     state = with_labels(dict(old, stage_statuses=["done"] * len(statuses)), {})
-    return commit_state(path, old, sync_parent_labels(state))
+    return commit_scope(path, root, sync_parent_labels(state), branch)
 
 
-def describe_state(path, mainline=None, *, stage=None, parent=None, details=None):
+def describe_state(path, mainline=None, *, stage=None, parent=None, details=None, branch=None):
     if mainline is None and details is None:
         raise ValueError("describe requires --mainline or --details")
     if mainline is not None:
@@ -376,9 +467,9 @@ def describe_state(path, mainline=None, *, stage=None, parent=None, details=None
             raise ValueError("--details requires --stage")
     if parent is not None and stage is None:
         raise ValueError("--parent requires --stage")
-    old = read_state(path)
+    root, old = read_scope(path, branch)
     if stage is None:
-        return commit_state(path, old, dict(old, mainline=mainline.strip()))
+        return commit_scope(path, root, dict(old, mainline=mainline.strip()), branch)
     group = old
     if parent is not None:
         parent = old["stages"][stage_index(old["stages"], parent)]
@@ -401,17 +492,22 @@ def describe_state(path, mainline=None, *, stage=None, parent=None, details=None
         if descriptions:
             updated["stage_details"] = descriptions
     if parent is None:
-        return commit_state(path, old, updated)
+        return commit_scope(path, root, updated, branch)
     substages = dict(old["substages"])
     substages[parent] = updated
-    return commit_state(path, old, dict(old, substages=substages))
+    return commit_scope(path, root, dict(old, substages=substages), branch)
 
 
-def replan_state(path, stages, current, reason):
+def replan_state(path, stages, current, reason, *, branch=None):
     nonempty(reason, "reason for a substantial scope change")
     stages = normalize_stages(stages)
     selected = selected_indices(stages, current)
     statuses = ["active" if i in selected else "pending" for i in range(len(stages))]
+    if branch is not None:
+        root, old = read_scope(path, branch)
+        route = {key: old[key] for key in ("name", "parent", "mainline")}
+        route.update(stages=stages, stage_statuses=statuses)
+        return commit_scope(path, root, route, branch)
     original = Path(path).read_bytes()
     old = json.loads(original.decode("utf-8"))
     legacy = is_legacy(old)
@@ -421,6 +517,8 @@ def replan_state(path, stages, current, reason):
             raise ValueError("Invalid legacy revision")
     else:
         old = validate_state(old)
+        if any(route["parent"] not in stages for route in old.get("branches", {}).values()):
+            raise ValueError("Replan would remove a branch parent; retain that stage or reanchor the branch with branch --id ID --parent STAGE first")
         if (old["stages"] == stages and old["stage_statuses"] == statuses
                 and "substages" not in old and "stage_labels" not in old
                 and "stage_mainlines" not in old and "stage_details" not in old):
@@ -432,6 +530,9 @@ def replan_state(path, stages, current, reason):
     if "mainline" in old:
         nonempty(old["mainline"], "mainline")
         state["mainline"] = old["mainline"]
+    if "branches" in old:
+        state["branches"] = old["branches"]
+    validate_state(state)
     if legacy:
         backup = Path(path).with_name(f"{Path(path).stem}.legacy-{uuid.uuid4().hex}.json")
         with backup.open("xb") as stream:
@@ -597,9 +698,23 @@ def main():
         sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for command in ("init", "position", "status", "subdivide", "finish", "describe", "replan", "read", "serve", "start"):
+    for command in ("init", "position", "status", "subdivide", "finish", "describe", "replan", "read", "branch", "serve", "start"):
         sub = commands.add_parser(command)
         sub.add_argument("--state", required=True)
+        if command in ("position", "status", "subdivide", "finish", "describe", "replan", "read"):
+            sub.add_argument("--branch")
+        if command == "read":
+            sub.add_argument("--overview", action="store_true")
+        if command == "branch":
+            sub.add_argument("--id", required=True)
+            sub.add_argument("--name")
+            sub.add_argument("--parent")
+            sub.add_argument("--mainline")
+            sub.add_argument("--stage", action="append")
+            sub.add_argument("--current", action="append")
+            visibility = sub.add_mutually_exclusive_group()
+            visibility.add_argument("--archive", action="store_true")
+            visibility.add_argument("--restore", action="store_true")
         if command in ("serve", "start"):
             sub.add_argument("--port", type=int, default=0)
         if command == "init":
@@ -628,25 +743,37 @@ def main():
         if args.command == "init":
             result = init_state(path, args.task_id, args.stage, args.current, args.mainline)
         elif args.command == "position":
-            result = position_state(path, args.current)
+            result = position_state(path, args.current, branch=args.branch)
         elif args.command == "status":
             result = status_state(path, active=args.active, done=args.done, pending=args.pending,
-                                  parent=args.parent, label=args.label)
+                                  parent=args.parent, label=args.label, branch=args.branch)
         elif args.command == "subdivide":
-            result = subdivide_state(path, args.parent, args.stage, args.current, args.reason)
+            result = subdivide_state(path, args.parent, args.stage, args.current, args.reason, branch=args.branch)
         elif args.command == "finish":
-            result = finish_state(path)
+            result = finish_state(path, branch=args.branch)
         elif args.command == "describe":
-            result = describe_state(path, args.mainline, stage=args.stage, parent=args.parent, details=args.details)
+            result = describe_state(path, args.mainline, stage=args.stage, parent=args.parent, details=args.details, branch=args.branch)
         elif args.command == "replan":
-            result = replan_state(path, args.stage, args.current, args.reason)
+            result = replan_state(path, args.stage, args.current, args.reason, branch=args.branch)
+        elif args.command == "branch":
+            result = branch_state(path, args.id, name=args.name, parent=args.parent, mainline=args.mainline,
+                                  stages=args.stage, current=args.current, archive=args.archive, restore=args.restore)
         elif args.command == "read":
+            if args.overview and args.branch is not None:
+                raise ValueError("Choose --overview or --branch, not both")
             result = read_state(path)
+            if args.overview:
+                result = overview_state(result)
         elif args.command == "serve":
             serve(path, args.port)
             return 0
         else:
             result = start(path, args.port)
+        branch = args.id if args.command == "branch" else getattr(args, "branch", None)
+        if branch is not None:
+            if branch not in result.get("branches", {}):
+                raise ValueError(f"Unknown branch: {branch}")
+            result = {"branch": branch, "revision": result["revision"], **result["branches"][branch]}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except (OSError, ValueError, TypeError, RuntimeError) as exc:

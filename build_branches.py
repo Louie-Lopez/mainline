@@ -13,14 +13,8 @@ def build():
     source = re.sub(r'@media\(prefers-color-scheme:dark\)\{[^\n]+\}', '', source)
     source = source.replace('color-scheme:light dark', 'color-scheme:light')
     source = source.replace('content="light dark"', 'content="light"')
-    source = source.replace('longest*15+24', "longest*(language==='zh'?15:8)+24")
-    source = source.replace('<title></title>', '<title>Mainline — branch experiment</title>')
+    source = source.replace('<title></title>', '<title>Mainline — branch demo</title>')
     source = source.replace('</style>', (ROOT / 'demo/branches.css').read_text(encoding='utf-8') + '\n</style>')
-    source = source.replace('<main>', '<main><nav id="route-path" hidden></nav>')
-    source = source.replace('</main>', '</main><div id="branch-picker" role="dialog" hidden></div>')
-    hook = 'axis.replaceChildren(fragment);signature=next;layout();'
-    assert source.count(hook) == 1, 'The card render hook changed; review the branch integration.'
-    source = source.replace(hook, 'axis.replaceChildren(fragment);signature=next;renderBranchChrome();layout();')
     source = source[:source.index('let refreshTimer=')]
     data = json.loads((ROOT / 'demo/branches-data.json').read_text(encoding='utf-8'))
     fixture = json.dumps(data, ensure_ascii=False).replace('</', '<\\/')

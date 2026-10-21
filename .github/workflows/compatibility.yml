@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '22'
       - name: State and service tests
-        run: python -m unittest -q test_mainline
+        run: python -m unittest -q test_mainline test_branches
       - name: Packaged runtime and detached startup
         run: python test_package_runtime.py
       - name: Install browser test dependencies
@@ -39,6 +39,8 @@ jobs:
         run: node test_browser.cjs
       - name: Packaged language and responsive views
         run: node test_languages.cjs
+      - name: Packaged branch navigation and progress isolation
+        run: node test_branches_browser.cjs
       - name: Show service diagnostics on failure
         if: failure()
         run: python -c "from pathlib import Path; files = [p for p in Path('.test-runs').rglob('*') if p.name.endswith(('.server.log', '.runtime.json'))]; [print(str(p) + '\n' + p.read_text(encoding='utf-8', errors='replace')) for p in files]"
