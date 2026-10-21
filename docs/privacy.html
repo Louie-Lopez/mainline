@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="How Mainline handles local project data, the public demo, and support requests.">
+<title>Privacy — Mainline</title>
+<link rel="stylesheet" href="info.css">
+<noscript><style>[data-lang][hidden]{display:block!important}</style></noscript>
+</head>
+<body>
+<header><a class="brand" href="./" data-local>Mainline</a><nav aria-label="Language"><a href="?lang=en" lang="en" hreflang="en" data-switch="en">EN</a><a href="?lang=zh" lang="zh-CN" hreflang="zh-CN" data-switch="zh">中文</a></nav></header>
+<main>
+<article data-lang="en" lang="en">
+<h1>Privacy</h1>
+<p class="meta">Updated 21 October 2026</p>
+<p>Mainline is a free, open-source project maintained by <a href="https://github.com/Louie-Lopez">@Louie-Lopez</a>. This page describes the local tool, this public demo, and support through GitHub Issues.</p>
+<h2>Your local project</h2>
+<p>Mainline stores the goal, stages, status labels, and any descriptions you or your AI agent record in local files. Its browser view reads those files through a service bound to <code>127.0.0.1</code> on your computer. It does not automatically capture conversations or upload project or conversation data to the maintainer. Mainline includes no usage analytics.</p>
+<p>Local records remain until you remove them. You control their storage, sharing, backups, and removal. The maintainer has no central copy of these records.</p>
+<h2>Your AI application</h2>
+<p>The AI application you use with Mainline may read and process your conversation and project state to follow Mainline's instructions. Its privacy settings and policies apply independently. Mainline's local storage does not change how that application handles data.</p>
+<h2>This demo website</h2>
+<p>The demo uses sample data. It does not connect to your projects or local Mainline service. Its interactions run in your browser, without an account, upload form, analytics scripts, cookies, localStorage, or sessionStorage added by Mainline. The selected sample scenario and language can appear in the URL and browser history.</p>
+<p>GitHub Pages hosts this site. GitHub may process technical request information, such as IP addresses, browser information, and access times, to provide its services. See the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a> for its practices.</p>
+<h2>Installation tools</h2>
+<p>If you choose a third-party installer, its own data practices apply. For example, the skills CLI sends installation telemetry by default; you can disable it with <code>DISABLE_TELEMETRY=1</code>. This is separate from Mainline. See the <a href="https://www.skills.sh/privacy">skills.sh privacy information</a> and <a href="https://www.skills.sh/docs/cli">opt-out instructions</a>.</p>
+<h2>Support and questions</h2>
+<p><a href="https://github.com/Louie-Lopez/mainline/issues">GitHub Issues</a> is the support channel. Issues, comments, and attachments are public, including the account information GitHub displays with them. The maintainer can read and respond to what you choose to share. Remove credentials, private project details, and personal information before posting. GitHub controls account data and platform retention under its own policy.</p>
+<p>For a question about these practices, open an issue containing only information you are comfortable making public.</p>
+</article>
+<article data-lang="zh" lang="zh-CN" hidden>
+<h1>隐私说明</h1>
+<p class="meta">更新于 2026 年 10 月 21 日</p>
+<p>Mainline 是由 <a href="https://github.com/Louie-Lopez">@Louie-Lopez</a> 维护的免费开源项目。本页说明本地工具、公开演示页和 GitHub Issues 支持渠道的数据处理方式。</p>
+<h2>本地项目数据</h2>
+<p>Mainline 将你或 AI Agent 记录的目标、阶段、状态标签和说明保存在本地文件中。网页通过绑定在本机 <code>127.0.0.1</code> 的服务读取这些文件。Mainline 不会自动收集对话，也不会向维护者上传项目或对话数据；工具内不含使用统计。</p>
+<p>本地记录会保留到你将其移除为止，保存、分享、备份与移除由你控制。维护者没有这些记录的集中副本。</p>
+<h2>你使用的 AI 应用</h2>
+<p>配合 Mainline 使用的 AI 应用可能读取、处理对话和项目状态，以执行 Mainline 的说明。该应用自己的隐私设置与政策独立适用。Mainline 将状态保存在本地，不会改变 AI 应用本身的数据处理方式。</p>
+<h2>本演示网站</h2>
+<p>演示页使用示例数据，不连接你的项目或本地 Mainline 服务。交互在浏览器中完成；Mainline 没有为演示页添加账号、上传表单、统计脚本、Cookie、localStorage 或 sessionStorage。所选示例场景和语言可能出现在网址与浏览器历史中。</p>
+<p>网站由 GitHub Pages 托管。GitHub 可能为提供服务处理 IP 地址、浏览器信息和访问时间等技术请求信息，具体见 <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub 隐私声明</a>。</p>
+<h2>安装工具</h2>
+<p>如果你选择第三方安装工具，其自身的数据处理规则独立适用。例如 skills CLI 默认发送安装统计，可通过 <code>DISABLE_TELEMETRY=1</code> 关闭。这与 Mainline 本身不同，详见 <a href="https://www.skills.sh/privacy">skills.sh 隐私说明</a>与<a href="https://www.skills.sh/docs/cli">关闭统计的方法</a>。</p>
+<h2>支持与咨询</h2>
+<p>支持渠道是 <a href="https://github.com/Louie-Lopez/mainline/issues">GitHub Issues</a>。问题、评论和附件均公开，也包含 GitHub 随内容显示的账号信息。维护者可以阅读并回复你主动分享的内容。发布前请移除凭据、私人项目内容和个人信息。GitHub 账号数据及平台上的保留方式遵循 GitHub 自身政策。</p>
+<p>如对本说明有疑问，可通过 Issue 联系，但请只填写你愿意公开的信息。</p>
+</article>
+</main>
+<footer><nav aria-label="Mainline information"><a href="./" data-local data-en="Demo" data-zh="演示">Demo</a><a href="support.html" data-local data-en="Support" data-zh="支持">Support</a><a href="privacy.html" data-local aria-current="page" data-en="Privacy" data-zh="隐私">Privacy</a><a href="terms.html" data-local data-en="Terms" data-zh="条款">Terms</a></nav></footer>
+<script>
+const requested=new URLSearchParams(location.search).get('lang');
+const lang=/^zh(?:-|$)/i.test(requested||navigator.language)?'zh':'en';
+document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+document.title=(lang==='zh'?'隐私说明':'Privacy')+' — Mainline';
+document.querySelectorAll('[data-lang]').forEach(el=>el.hidden=el.dataset.lang!==lang);
+document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[lang]);
+document.querySelector('[data-switch="'+lang+'"]').setAttribute('aria-current','true');
+document.querySelectorAll('[data-local]').forEach(el=>el.href=el.getAttribute('href')+'?lang='+lang);
+</script>
+</body>
+</html>

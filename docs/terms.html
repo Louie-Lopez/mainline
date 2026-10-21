@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Mainline is free and open source under the MIT License.">
+<title>Terms — Mainline</title>
+<link rel="stylesheet" href="info.css">
+<noscript><style>[data-lang][hidden]{display:block!important}</style></noscript>
+</head>
+<body>
+<header><a class="brand" href="./" data-local>Mainline</a><nav aria-label="Language"><a href="?lang=en" lang="en" hreflang="en" data-switch="en">EN</a><a href="?lang=zh" lang="zh-CN" hreflang="zh-CN" data-switch="zh">中文</a></nav></header>
+<main>
+<article data-lang="en" lang="en">
+<h1>Terms of use</h1>
+<p class="meta">Updated 21 October 2026</p>
+<p>Mainline is free, open-source software maintained by <a href="https://github.com/Louie-Lopez">@Louie-Lopez</a>. The project does not charge for the tool or this demo, and includes no purchases or paid features.</p>
+<h2>Software license</h2>
+<p>Use, copying, modification, and distribution of Mainline are governed by the repository's <a href="https://github.com/Louie-Lopez/mainline/blob/main/LICENSE">MIT License</a>. Keep its copyright and permission notices as required by that license. Its warranty disclaimer and limitation of liability also apply. This page summarizes the existing license; it does not add to or replace it.</p>
+<h2>What the tool shows</h2>
+<p>Mainline displays progress recorded by you or your AI agent. It is not an independent check that work is correct or complete. The online demo contains illustrative sample stages, not your live project.</p>
+<h2>Other services</h2>
+<p>Your AI application, GitHub, and any third-party installer have their own terms and may have their own charges. Mainline does not change those arrangements. For questions about Mainline, use <a href="support.html" data-local>GitHub Issues support</a>. Data handling is described in the <a href="privacy.html" data-local>privacy notice</a>.</p>
+</article>
+<article data-lang="zh" lang="zh-CN" hidden>
+<h1>使用条款</h1>
+<p class="meta">更新于 2026 年 10 月 21 日</p>
+<p>Mainline 是由 <a href="https://github.com/Louie-Lopez">@Louie-Lopez</a> 维护的免费开源软件。本项目不对工具或演示页收费，也不含购买流程或付费功能。</p>
+<h2>软件许可</h2>
+<p>Mainline 的使用、复制、修改和分发遵循仓库中的 <a href="https://github.com/Louie-Lopez/mainline/blob/main/LICENSE">MIT 许可证</a>。请按许可证要求保留版权与许可声明，其中的无担保及责任限制条款同样适用。本页是对现有许可证的说明，不增加或替代其条款。</p>
+<h2>工具展示的内容</h2>
+<p>Mainline 展示你或 AI Agent 记录的进展，不会独立验证工作是否正确或完成。在线演示中的阶段用于说明功能，并非你的实时项目。</p>
+<h2>其他服务</h2>
+<p>你使用的 AI 应用、GitHub 及第三方安装工具各自适用其服务条款，也可能有自身费用；Mainline 不改变这些安排。Mainline 相关问题可通过 <a href="support.html" data-local>GitHub Issues 支持渠道</a>提出，数据处理方式见<a href="privacy.html" data-local>隐私说明</a>。</p>
+</article>
+</main>
+<footer><nav aria-label="Mainline information"><a href="./" data-local data-en="Demo" data-zh="演示">Demo</a><a href="support.html" data-local data-en="Support" data-zh="支持">Support</a><a href="privacy.html" data-local data-en="Privacy" data-zh="隐私">Privacy</a><a href="terms.html" data-local aria-current="page" data-en="Terms" data-zh="条款">Terms</a></nav></footer>
+<script>
+const requested=new URLSearchParams(location.search).get('lang');
+const lang=/^zh(?:-|$)/i.test(requested||navigator.language)?'zh':'en';
+document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+document.title=(lang==='zh'?'使用条款':'Terms')+' — Mainline';
+document.querySelectorAll('[data-lang]').forEach(el=>el.hidden=el.dataset.lang!==lang);
+document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[lang]);
+document.querySelector('[data-switch="'+lang+'"]').setAttribute('aria-current','true');
+document.querySelectorAll('[data-local]').forEach(el=>el.href=el.getAttribute('href')+'?lang='+lang);
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Get help with Mainline, a minimal visual guide to your project's goal and progress.">
+<title>Support — Mainline</title>
+<link rel="stylesheet" href="info.css">
+<noscript><style>[data-lang][hidden]{display:block!important}</style></noscript>
+</head>
+<body>
+<header><a class="brand" href="./" data-local>Mainline</a><nav aria-label="Language"><a href="?lang=en" lang="en" hreflang="en" data-switch="en">EN</a><a href="?lang=zh" lang="zh-CN" hreflang="zh-CN" data-switch="zh">中文</a></nav></header>
+<main>
+<article data-lang="en" lang="en">
+<h1>Support</h1>
+<p>Mainline keeps a project's goal, stable stages, and current work visible during long AI conversations. It is a free, open-source project maintained by <a href="https://github.com/Louie-Lopez">@Louie-Lopez</a>.</p>
+<h2>Ask for help or report a problem</h2>
+<p>Use <a href="https://github.com/Louie-Lopez/mainline/issues">GitHub Issues</a> for questions, bug reports, and suggestions. English and Chinese are welcome. Check existing issues first; for a bug, include your operating system, AI application, Mainline version, what you expected, and what happened.</p>
+<p>Issues are public. Remove credentials and private project or conversation content from examples and screenshots before posting.</p>
+<h2>Try it or install it</h2>
+<p>The <a href="./" data-local>interactive demo</a> runs with sample data and needs no installation. To use Mainline with your own projects, follow the <a href="https://github.com/Louie-Lopez/mainline#install">installation guide</a>. The verified workflow is Codex on Windows; other environments may need testing.</p>
+<p>Mainline is an independent project. It is not made by OpenAI and does not imply OpenAI endorsement.</p>
+</article>
+<article data-lang="zh" lang="zh-CN" hidden>
+<h1>支持</h1>
+<p>Mainline 在长对话中展示项目目标、稳定的阶段划分和当前工作，让你随时看清项目全貌。它是由 <a href="https://github.com/Louie-Lopez">@Louie-Lopez</a> 维护的免费开源项目。</p>
+<h2>提问、反馈问题或建议</h2>
+<p>请使用 <a href="https://github.com/Louie-Lopez/mainline/issues">GitHub Issues</a>，中英文均可。提交前可先查找已有问题；反馈故障时，请说明操作系统、AI 应用、Mainline 版本、预期结果和实际情况。</p>
+<p>Issue 内容公开。发布示例或截图前，请移除凭据、私人项目和对话内容。</p>
+<h2>体验或安装</h2>
+<p><a href="./" data-local>交互演示</a>使用示例数据，无需安装。要用于自己的项目，请查看<a href="https://github.com/Louie-Lopez/mainline/blob/main/README.zh-CN.md#安装">安装说明</a>。目前已验证 Windows 上的 Codex 工作流，其他环境仍需实际测试。</p>
+<p>Mainline 是独立项目，不由 OpenAI 制作，也不代表获得 OpenAI 背书。</p>
+</article>
+</main>
+<footer><nav aria-label="Mainline information"><a href="./" data-local data-en="Demo" data-zh="演示">Demo</a><a href="support.html" data-local aria-current="page" data-en="Support" data-zh="支持">Support</a><a href="privacy.html" data-local data-en="Privacy" data-zh="隐私">Privacy</a><a href="terms.html" data-local data-en="Terms" data-zh="条款">Terms</a></nav></footer>
+<script>
+const requested=new URLSearchParams(location.search).get('lang');
+const lang=/^zh(?:-|$)/i.test(requested||navigator.language)?'zh':'en';
+document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+document.title=(lang==='zh'?'支持':'Support')+' — Mainline';
+document.querySelectorAll('[data-lang]').forEach(el=>el.hidden=el.dataset.lang!==lang);
+document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[lang]);
+document.querySelector('[data-switch="'+lang+'"]').setAttribute('aria-current','true');
+document.querySelectorAll('[data-local]').forEach(el=>el.href=el.getAttribute('href')+'?lang='+lang);
+</script>
+</body>
+</html>

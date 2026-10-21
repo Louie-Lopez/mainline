@@ -1,0 +1,23 @@
+:root{color-scheme:light dark;--bg:#fcf9f3;--ink:#394b68;--heading:#203655;--line:#d8cbb4;--accent:#8c682f}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--ink);font:16px/1.8 system-ui,"Microsoft YaHei",sans-serif}
+body{margin:0}
+header,main,footer{width:min(760px,100%);margin:auto;padding:24px 28px}
+header{display:flex;align-items:center;justify-content:space-between;gap:24px;font-size:14px}
+.brand{font-size:17px;font-weight:650;color:var(--heading);text-decoration:none}
+nav{display:flex;flex-wrap:wrap;gap:18px}
+a{color:inherit;text-underline-offset:4px}
+a:hover{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:5px;border-radius:2px}
+nav a{text-decoration:none}
+nav a[aria-current]{text-decoration:underline;text-decoration-color:var(--accent)}
+h1,h2{color:var(--heading);font-weight:600;line-height:1.4}
+h1{font-size:28px;margin:8px 0 6px}
+h2{font-size:18px;margin:30px 0 8px}
+p{margin:0 0 16px;overflow-wrap:anywhere}
+.meta{font-size:13px;margin-bottom:28px}
+code{font-size:.9em}
+footer{border-top:1px solid var(--line);font-size:13px;margin-top:20px;margin-bottom:24px}
+[hidden]{display:none!important}
+@media(prefers-color-scheme:dark){:root{--bg:#101a30;--ink:#c2cde1;--heading:#f3eada;--line:#43516c;--accent:#e5c78e}}
+@media(max-width:480px){header,main,footer{padding:20px}h1{font-size:25px}}
