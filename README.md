@@ -37,20 +37,15 @@ The axis shows the order of project stages, rather than time spent. Progress com
 
 ## Where it works
 
-Mainline's records and browser view do not depend on a particular model provider. What matters is whether the AI application can read its operating instructions, run Python, and access the project's local files.
+This beta is mainly for Codex desktop. Plugin installation and use have been tested on Windows. The same package is checked on Windows, macOS, and Linux for local startup, progress updates, and browser interaction. See the [automated test results](https://github.com/Louie-Lopez/mainline/actions/workflows/compatibility.yml).
 
-| Environment | Current support |
-| --- | --- |
-| Codex desktop with local execution | Primary workflow; installation and use tested on Windows. The view can open beside the chat. |
-| Other AI assistants with local execution | Can reuse the same instructions and runtime files. Installation and opening the view need verification in each application. |
-| Assistants used in a terminal | Can update the record; you view it in a separate browser. |
-| Remote agents or cloud-only chat | Need a way for your browser to reach the machine running Mainline. No remote connection setup is included. |
-
-The current release is a public beta. Other AI applications and macOS/Linux have not yet been tested.
+The runtime uses Python and a browser, so other AI assistants can reuse the standalone skill if they can run local commands and access project files. In a terminal, open the view in your usual browser. With a remote agent, the browser needs access to the machine running Mainline.
 
 ## Install
 
 Requires **Python 3.10+** and a modern browser. Mainline itself needs no additional Python packages, API key, account, or hosted service.
+
+If your system uses the command `python3`, use it in place of `python` in the examples below.
 
 Choose the Codex plugin or the standalone [Agent Skills](https://agentskills.io/home) package. Both provide the same functionality; install only one to avoid duplicate loading. Mainline opens in a browser panel or separate browser, with progress explicitly updated by the assistant.
 

@@ -37,20 +37,15 @@ Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目
 
 ## 适合哪些环境？
 
-Mainline 的记录和网页展示不绑定某个模型。能否接入，主要取决于 AI 工具能否读取操作说明、运行 Python，以及访问项目的本地文件。
+当前测试版主要面向 Codex 桌面端，已在 Windows 上验证插件安装和使用。同一份程序也在 Windows、macOS、Linux 上自动测试本地启动、进展更新和页面交互，结果见[自动测试记录](https://github.com/Louie-Lopez/mainline/actions/workflows/compatibility.yml)。
 
-| 使用环境 | 当前支持情况 |
-| --- | --- |
-| Codex 桌面端、本地执行 | 主要使用方式，已在 Windows 验证安装和使用，可在对话旁打开视图。 |
-| 其他能执行本地操作的 AI 助手 | 可以复用同一份操作说明和运行文件；安装及打开页面的方式需要逐个验证。 |
-| 在终端中使用的 AI 助手 | 可以更新记录，用户通过独立浏览器查看。 |
-| 远程 Agent、纯云端聊天 | 需要让用户的浏览器能够连接到运行 Mainline 的机器；当前未提供远程连接配置。 |
-
-当前版本是公开测试版，尚未验证其他 AI 工具以及 macOS、Linux。
+运行程序只依赖 Python 和浏览器，其他能执行本地命令、访问项目文件的 AI 助手也可以复用独立 skill。在终端中使用时，用普通浏览器打开视图即可；使用远程 Agent 时，浏览器需要能连到运行 Mainline 的机器。
 
 ## 安装
 
 需要 **Python 3.10+** 和现代浏览器。Mainline 本身不需要额外 Python 包、API 密钥、账号或云服务。
+
+如果系统中的命令叫 `python3`，把下方示例里的 `python` 换成 `python3` 即可。
 
 选择 Codex 插件或独立的 [Agent Skills](https://agentskills.io/home) 技能包即可，两者功能相同，只装一种以免重复加载。Mainline 在浏览器面板或独立浏览器中展示，由 AI 明确更新进展。
 
