@@ -72,12 +72,12 @@ codex plugin add mainline@mainline-tools
 
 ### Codex 或其他 AI 助手：安装独立技能
 
-完整技能位于 [`plugin/skills/mainline`](plugin/skills/mainline)。按所用 AI 工具的技能安装方式导入这个目录，保留其中三个文件；只复制 `SKILL.md` 无法运行。不要把整个仓库装作一个技能，因为仓库还包含一份用于开发的源码。
+完整技能位于 [`plugin/skills/mainline`](plugin/skills/mainline)。按所用 AI 工具的技能安装方式导入这个目录，保留其中三个文件；只复制 `SKILL.md` 无法运行。安装工具会从仓库中自动找到这个目录。
 
 如果已安装 Node.js 22.20 或更新版本，也可以通过社区的 [skills 安装工具](https://github.com/vercel-labs/skills)安装，并选择要接入的 AI 工具：
 
 ```sh
-npx skills add https://github.com/Louie-Lopez/mainline/tree/main/plugin/skills/mainline --skill mainline
+npx skills add Louie-Lopez/mainline --skill mainline
 ```
 
 该安装方式已在 Windows 上针对 Codex 验证。Node.js 仅用于这个安装工具。它的匿名安装统计用于 [skills.sh 技能发现](https://www.skills.sh/docs/faq)，可通过环境变量 `DISABLE_TELEMETRY=1` 关闭；Mainline 本身不收集统计。
@@ -107,7 +107,7 @@ python mainline.py status --state STATE --done 定义目标 --active 实现 --ac
 python mainline.py start --state STATE
 ```
 
-打开返回的链接即可。每个项目使用独立状态，同一文件由一个协调代理写入。更新、细分、描述和恢复规则见 [SKILL.md](SKILL.md)。你自己的公开仓库也应忽略 `.mainline/`，它可能包含私人项目内容和机器路径。服务仅监听 `127.0.0.1`，网页接口只读，无遥测和外部 API 请求；本地文件及 AI 宿主取得的访问权限仍由宿主管理。
+打开返回的链接即可。每个项目使用独立状态，同一文件由一个协调代理写入。更新、细分、描述和恢复规则见 [SKILL.md](plugin/skills/mainline/SKILL.md)。你自己的公开仓库也应忽略 `.mainline/`，它可能包含私人项目内容和机器路径。服务仅监听 `127.0.0.1`，网页接口只读，无遥测和外部 API 请求；本地文件及 AI 宿主取得的访问权限仍由宿主管理。
 
 更新 `mainline.py` 后需要重启原服务；只改网页时刷新即可。轴变淡表示连接或读取失败，当前保留的是上次成功读取的画面。
 
@@ -122,7 +122,7 @@ python build_demo.py
 node test_demo.cjs
 ```
 
-Node 和 Playwright 仅用于浏览器测试。可用 `MAINLINE_PYTHON`、`MAINLINE_PLAYWRIGHT`、`MAINLINE_BROWSER_CHANNEL` 指定已有运行环境。测试数据保留在被忽略的 `.test-runs/`。编辑根目录源码后运行 `build_plugin.py`，按明确清单生成仓库中的 `plugin/` 分发目录及 `dist/mainline-<版本>.zip`。两者均排除实际项目数据，`skills/mainline/` 使用同一份技能和运行代码。
+Node 和 Playwright 仅用于浏览器测试。可用 `MAINLINE_PYTHON`、`MAINLINE_PLAYWRIGHT`、`MAINLINE_BROWSER_CHANNEL` 指定已有运行环境。测试数据保留在被忽略的 `.test-runs/`。编辑 `mainline.py`、`card.html` 和 `packaging/mainline-skill.md` 后运行 `build_plugin.py`，按明确清单生成仓库中的 `plugin/` 分发目录及 `dist/mainline-<版本>.zip`。两者均排除实际项目数据，`skills/mainline/` 使用同一份技能和运行代码。
 
 最有帮助的反馈来自实际项目：主线是否缩窄、活动阶段是否清楚、更新是否打扰对话。请在 [Issues](https://github.com/Louie-Lopez/mainline/issues) 中附上宿主、系统、期望行为和不含私人内容的最小示例。
 

@@ -6,6 +6,11 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parent
+SOURCES = {
+    "SKILL.md": ROOT / "packaging/mainline-skill.md",
+    "mainline.py": ROOT / "mainline.py",
+    "card.html": ROOT / "card.html",
+}
 
 
 def build():
@@ -22,10 +27,10 @@ def build():
         "plugin.json": (json.dumps(portable, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
         ".codex-plugin/plugin.json": (json.dumps(compatibility, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
     }
-    for name in ("SKILL.md", "mainline.py", "card.html"):
-        files["skills/mainline/" + name] = (ROOT / name).read_bytes()
+    for name, source in SOURCES.items():
+        files["skills/mainline/" + name] = source.read_bytes()
     files["LICENSE"] = (ROOT / "LICENSE").read_bytes()
-    # The repository marketplace serves this generated package. Edit root sources only.
+    # Installers discover only the generated skill; development instructions use another filename.
     package = ROOT / "plugin"
     for name, data in files.items():
         destination = package / name
@@ -43,7 +48,8 @@ def build():
     with zipfile.ZipFile(output) as archive:
         assert archive.testzip() is None
         assert set(archive.namelist()) == set(files)
-        assert archive.read("skills/mainline/mainline.py") == (ROOT / "mainline.py").read_bytes()
+        for name, source in SOURCES.items():
+            assert archive.read("skills/mainline/" + name) == source.read_bytes()
     return output
 
 

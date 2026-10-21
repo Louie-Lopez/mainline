@@ -10,14 +10,14 @@ import threading
 import uuid
 import zipfile
 
-from build_plugin import ROOT, build
+from build_plugin import ROOT, SOURCES, build
 
 
 def check():
     archive = build()
     with zipfile.ZipFile(archive) as bundle:
-        for name in ("SKILL.md", "mainline.py", "card.html"):
-            assert bundle.read("skills/mainline/" + name) == (ROOT / name).read_bytes()
+        for name, source_file in SOURCES.items():
+            assert bundle.read("skills/mainline/" + name) == source_file.read_bytes()
         manifest = json.loads(bundle.read("plugin.json"))
         assert manifest["extensions"]["com.openai"]["requires_local_executor"] is True
         assert len(manifest["extensions"]["com.openai"]["interface"]["shortDescription"]) <= 30
@@ -73,8 +73,8 @@ def check():
                  if skill["name"] == "mainline:mainline"]
         assert len(found) == 1 and found[0]["enabled"], found
         installed = Path(found[0]["path"]).parent
-        for name in ("SKILL.md", "mainline.py", "card.html"):
-            assert (installed / name).read_bytes() == (ROOT / name).read_bytes()
+        for name, source_file in SOURCES.items():
+            assert (installed / name).read_bytes() == source_file.read_bytes()
         print(json.dumps({"passed": True, "skill": found[0]["name"],
                           "archive": str(archive), "fixture": str(run)}, indent=2))
     finally:

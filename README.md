@@ -72,12 +72,12 @@ This repository source is separate from OpenAI's public plugin directory. Mainli
 
 ### Codex or another assistant: standalone skill
 
-The complete skill folder is [`plugin/skills/mainline`](plugin/skills/mainline). Install that folder using your application's skill installation mechanism. Keep all three files together; copying only `SKILL.md` will not provide the running tool. Avoid installing the whole repository as a skill, because it also contains a development copy.
+The complete skill folder is [`plugin/skills/mainline`](plugin/skills/mainline). Install that folder using your application's skill installation mechanism. Keep all three files together; copying only `SKILL.md` will not provide the running tool. The installer discovers this folder automatically from the repository.
 
 With Node.js 22.20 or later, you can use the community [skills installer](https://github.com/vercel-labs/skills) and choose your AI application:
 
 ```sh
-npx skills add https://github.com/Louie-Lopez/mainline/tree/main/plugin/skills/mainline --skill mainline
+npx skills add Louie-Lopez/mainline --skill mainline
 ```
 
 This installation route has been checked for Codex on Windows. Node.js is only needed for this installer. Its anonymous installation telemetry supports discovery on [skills.sh](https://www.skills.sh/docs/faq); you can disable it with `DISABLE_TELEMETRY=1`. Mainline itself does not collect telemetry.
@@ -107,7 +107,7 @@ python mainline.py status --state STATE --done Define --active Build --active Va
 python mainline.py start --state STATE
 ```
 
-Open the returned URL. Each project uses a separate state file, with one coordinating writer. See [SKILL.md](SKILL.md) for updates, substages, descriptions, and recovery. Keep `.mainline/` out of your own public repositories: it may contain private project details and machine paths. The service binds to `127.0.0.1`, exposes read-only routes, and makes no telemetry or outbound API calls. Local files and access granted to your AI host remain under that host's controls.
+Open the returned URL. Each project uses a separate state file, with one coordinating writer. See [SKILL.md](plugin/skills/mainline/SKILL.md) for updates, substages, descriptions, and recovery. Keep `.mainline/` out of your own public repositories: it may contain private project details and machine paths. The service binds to `127.0.0.1`, exposes read-only routes, and makes no telemetry or outbound API calls. Local files and access granted to your AI host remain under that host's controls.
 
 After changing `mainline.py`, restart its existing server; refreshing the browser is sufficient only for HTML changes. A dimmed axis means the last known view is being retained after a connection or read failure.
 
@@ -122,7 +122,7 @@ python build_demo.py
 node test_demo.cjs
 ```
 
-Node/Playwright are only for browser tests. `MAINLINE_PYTHON`, `MAINLINE_PLAYWRIGHT`, and `MAINLINE_BROWSER_CHANNEL` can select an existing runtime/module/browser channel. Tests retain isolated fixtures under ignored `.test-runs/`. Edit the root sources; `build_plugin.py` regenerates the tracked `plugin/` distribution and `dist/mainline-<version>.zip` from an explicit file list. Both exclude runtime data and contain the same skill/runtime sources under `skills/mainline/`.
+Node/Playwright are only for browser tests. `MAINLINE_PYTHON`, `MAINLINE_PLAYWRIGHT`, and `MAINLINE_BROWSER_CHANNEL` can select an existing runtime/module/browser channel. Tests retain isolated fixtures under ignored `.test-runs/`. Edit `mainline.py`, `card.html`, and `packaging/mainline-skill.md`; `build_plugin.py` regenerates the tracked `plugin/` distribution and `dist/mainline-<version>.zip` from an explicit file list. Both exclude runtime data and contain the same skill/runtime sources under `skills/mainline/`.
 
 Feedback is most useful after trying a real project: did the scope stay correct, were active stages clear, and did updates become intrusive? Open an [issue](https://github.com/Louie-Lopez/mainline/issues) with the host, operating system, expected behavior, and a minimal example without private data.
 
