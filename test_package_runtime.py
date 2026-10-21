@@ -94,4 +94,4 @@ if __name__ == "__main__":
         with zipfile.ZipFile(build()) as archive:
             archive.extractall(run / "package")
         skill = run / "package/skills/mainline"
-    print(json.dumps(check_runtime(skill, run), ensure_ascii=False, indent=2))
+    print(json.dumps(check_runtime(skill, run), indent=2))

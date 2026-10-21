@@ -98,7 +98,7 @@ def check(browser=False):
                   "runtime": runtime, "browser_suites": browsers}
         (run / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)
                                          + "\n", encoding="utf-8")
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        print(json.dumps(report, indent=2))
     finally:
         process.terminate()
         process.wait(timeout=10)
