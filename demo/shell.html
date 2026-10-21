@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Try Mainline: one project goal, stable stages, and clear current work alongside your AI conversations. No installation needed.">
+<title>Mainline — interactive demo</title>
+<style>
+{{STYLE}}
+body{min-height:100svh;display:flex;flex-direction:column;color:var(--ink)}
+.topbar{width:min(1100px,100%);margin:0 auto;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;font-size:13px}
+.brand{font-weight:650;font-size:16px;letter-spacing:.02em;color:var(--heading)}
+.topbar nav{display:flex;gap:20px;align-items:center}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:4px}
+.topbar a[aria-current="true"]{color:var(--heading);font-weight:700}
+main{min-height:0;flex:1;padding:70px 28px;gap:36px}
+.demo-footer{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;padding:0 24px 28px}
+.demo-footer p{margin:0;font-size:12px;line-height:1.7;max-width:540px}
+.scenarios{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.scenarios button{border:1px solid transparent;background:transparent;color:var(--ink);font:inherit;font-size:13px;padding:7px 13px;border-radius:6px;cursor:pointer}
+.scenarios button[aria-pressed="true"]{border-color:var(--accent);background:var(--halo);color:var(--heading)}
+.scenarios button:hover{background:var(--halo)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+#install{font-size:13px;color:var(--heading);border-bottom:1px solid var(--accent);padding-bottom:3px}
+@media(max-width:520px){.topbar{padding:20px}.topbar nav{gap:14px}main{padding:46px 22px}.demo-footer{gap:16px}}
+</style>
+</head>
+<body>
+<header class="topbar"><span class="brand">Mainline</span><nav aria-label="Language and source"><a id="lang-en" href="?lang=en" lang="en" hreflang="en">EN</a><a id="lang-zh" href="?lang=zh" lang="zh-CN" hreflang="zh-CN">中文</a><a href="https://github.com/Louie-Lopez/mainline">GitHub ↗</a></nav></header>
+<main>{{VIEW}}</main>
+<footer class="demo-footer">
+<p id="hint"></p>
+<div id="scenarios" class="scenarios" role="group"></div>
+<a id="install" href="https://github.com/Louie-Lopez/mainline#install"></a>
+<p id="demo-note"></p>
+</footer>
+<noscript><p style="text-align:center">Enable JavaScript to try the demo. / 启用 JavaScript 后即可体验。</p></noscript>
+<script>{{SCRIPT}}</script>
+</body>
+</html>

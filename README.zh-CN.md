@@ -2,11 +2,13 @@
 
 **和 AI 工作时，始终看得见整个项目。**
 
-[English](README.md) · [下载版本](https://github.com/Louie-Lopez/mainline/releases) · [反馈问题](https://github.com/Louie-Lopez/mainline/issues)
+[直接体验](https://louie-lopez.github.io/mainline/?lang=zh) · [English](README.md) · [下载版本](https://github.com/Louie-Lopez/mainline/releases) · [反馈问题](https://github.com/Louie-Lopez/mainline/issues)
 
 长对话会不断累积修改、实验和临时插问。最新任务容易取代整个项目，已经完成的工作难以找回，“本轮做完了”也容易被误当成“项目完成了”。Mainline 用**一句项目主线和一条覆盖项目从启动到完成的阶段轴**，让你直接看到：当前工作属于哪里、哪些环节正在推进、还有哪些没有完成，减少反复翻阅对话的负担。
 
 ![Mainline 的项目全景与两个同时活动的阶段](docs/overview.png)
+
+[交互演示](https://louie-lopez.github.io/mainline/?lang=zh)无需安装。可以查看示例项目、展开环节，或切换并行推进、修复错误、交付等状态。演示复用正式工具的展示代码，使用虚构数据，不连接 AI。
 
 Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目目标、阶段和进展，它把记录保存在你的机器上，你在浏览器中查看。安装后，只需对 AI 说：
 
@@ -72,6 +74,14 @@ codex plugin add mainline@mainline-tools
 
 完整技能位于 [`plugin/skills/mainline`](plugin/skills/mainline)。按所用 AI 工具的技能安装方式导入这个目录，保留其中三个文件；只复制 `SKILL.md` 无法运行。不要把整个仓库装作一个技能，因为仓库还包含一份用于开发的源码。
 
+如果已安装 Node.js 22.20 或更新版本，也可以通过社区的 [skills 安装工具](https://github.com/vercel-labs/skills)安装，并选择要接入的 AI 工具：
+
+```sh
+npx skills add https://github.com/Louie-Lopez/mainline/tree/main/plugin/skills/mainline --skill mainline
+```
+
+该安装方式已在 Windows 上针对 Codex 验证。Node.js 仅用于这个安装工具。它的匿名安装统计用于 [skills.sh 技能发现](https://www.skills.sh/docs/faq)，可通过环境变量 `DISABLE_TELEMETRY=1` 关闭；Mainline 本身不收集统计。
+
 在 Codex 中，可以对内置的技能安装器说：
 
 ```text
@@ -108,10 +118,14 @@ npx playwright install chromium
 node test_browser.cjs
 node test_languages.cjs
 python build_plugin.py
+python build_demo.py
+node test_demo.cjs
 ```
 
 Node 和 Playwright 仅用于浏览器测试。可用 `MAINLINE_PYTHON`、`MAINLINE_PLAYWRIGHT`、`MAINLINE_BROWSER_CHANNEL` 指定已有运行环境。测试数据保留在被忽略的 `.test-runs/`。编辑根目录源码后运行 `build_plugin.py`，按明确清单生成仓库中的 `plugin/` 分发目录及 `dist/mainline-<版本>.zip`。两者均排除实际项目数据，`skills/mainline/` 使用同一份技能和运行代码。
 
 最有帮助的反馈来自实际项目：主线是否缩窄、活动阶段是否清楚、更新是否打扰对话。请在 [Issues](https://github.com/Louie-Lopez/mainline/issues) 中附上宿主、系统、期望行为和不含私人内容的最小示例。
+
+公开演示由 `card.html` 与 `demo/` 中的少量页面代码生成；修改后运行 `build_demo.py`。GitHub Pages 托管仓库中的 `docs/` 目录，演示无需后端或依赖，不连接真实项目记录。
 
 采用 [MIT 许可证](LICENSE)。

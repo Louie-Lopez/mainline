@@ -2,11 +2,13 @@
 
 **Keep the whole project in view while you work with AI.**
 
-[简体中文](README.zh-CN.md) · [Releases](https://github.com/Louie-Lopez/mainline/releases) · [Report an issue](https://github.com/Louie-Lopez/mainline/issues)
+[Try the demo](https://louie-lopez.github.io/mainline/?lang=en) · [简体中文](README.zh-CN.md) · [Releases](https://github.com/Louie-Lopez/mainline/releases) · [Report an issue](https://github.com/Louie-Lopez/mainline/issues)
 
 Long AI conversations accumulate fixes, experiments, and side questions. The latest request can take over the plan, completed work becomes hard to recover, and “this task is done” gets confused with “the project is done.” Mainline keeps one project goal and a small, stable axis of stages from project start to completion beside the conversation, so you can see **where the work belongs, what is active, and what remains** without rereading the chat.
 
 ![Mainline showing a project lifecycle with two active stages](docs/overview.png)
+
+The [interactive demo](https://louie-lopez.github.io/mainline/?lang=en) needs no installation. Explore a sample project, expand a stage, or switch between parallel work, fixing, and delivery. It uses the same renderer as the installed tool, with fictional data and no AI connection.
 
 Mainline is a local project view that you use alongside an AI assistant. You ask the assistant to record the project's goal, stages, and progress; it saves those records on your machine, and you view them in a browser. After installation, start with a request such as:
 
@@ -72,6 +74,14 @@ This repository source is separate from OpenAI's public plugin directory. Mainli
 
 The complete skill folder is [`plugin/skills/mainline`](plugin/skills/mainline). Install that folder using your application's skill installation mechanism. Keep all three files together; copying only `SKILL.md` will not provide the running tool. Avoid installing the whole repository as a skill, because it also contains a development copy.
 
+With Node.js 22.20 or later, you can use the community [skills installer](https://github.com/vercel-labs/skills) and choose your AI application:
+
+```sh
+npx skills add https://github.com/Louie-Lopez/mainline/tree/main/plugin/skills/mainline --skill mainline
+```
+
+This installation route has been checked for Codex on Windows. Node.js is only needed for this installer. Its anonymous installation telemetry supports discovery on [skills.sh](https://www.skills.sh/docs/faq); you can disable it with `DISABLE_TELEMETRY=1`. Mainline itself does not collect telemetry.
+
 In Codex, you can ask its built-in skill installer:
 
 ```text
@@ -108,10 +118,14 @@ npx playwright install chromium
 node test_browser.cjs
 node test_languages.cjs
 python build_plugin.py
+python build_demo.py
+node test_demo.cjs
 ```
 
 Node/Playwright are only for browser tests. `MAINLINE_PYTHON`, `MAINLINE_PLAYWRIGHT`, and `MAINLINE_BROWSER_CHANNEL` can select an existing runtime/module/browser channel. Tests retain isolated fixtures under ignored `.test-runs/`. Edit the root sources; `build_plugin.py` regenerates the tracked `plugin/` distribution and `dist/mainline-<version>.zip` from an explicit file list. Both exclude runtime data and contain the same skill/runtime sources under `skills/mainline/`.
 
 Feedback is most useful after trying a real project: did the scope stay correct, were active stages clear, and did updates become intrusive? Open an [issue](https://github.com/Louie-Lopez/mainline/issues) with the host, operating system, expected behavior, and a minimal example without private data.
+
+The public demo is generated from `card.html` and the small `demo/` wrapper. Run `build_demo.py` after either changes. GitHub Pages serves the tracked `docs/` directory; the demo has no backend, dependencies, or connection to real project records.
 
 [MIT license](LICENSE).
