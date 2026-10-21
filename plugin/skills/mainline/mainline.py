@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+from socketserver import TCPServer
 import subprocess
 import sys
 import threading
@@ -516,7 +517,13 @@ def make_server(state_path, port=0):
         do_DELETE = do_POST
         do_PATCH = do_POST
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    class LocalServer(ThreadingHTTPServer):
+        def server_bind(self):
+            # The loopback address needs no reverse DNS, which can delay startup.
+            TCPServer.server_bind(self)
+            self.server_name, self.server_port = self.server_address
+
+    server = LocalServer(("127.0.0.1", port), Handler)
     server.daemon_threads = True
     server.task_id = bound_task
     server.state_path = state_path

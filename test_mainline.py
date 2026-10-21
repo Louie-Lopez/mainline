@@ -203,6 +203,11 @@ class MainlineTests(unittest.TestCase):
                 self.assertEqual(get(url + "/state?lang=" + language)[0]["state"], self.state)
         self.assertEqual(self.path.read_bytes(), original)
 
+    def test_local_service_does_not_require_name_resolution(self):
+        with patch("socket.getfqdn", side_effect=AssertionError("Unexpected DNS lookup")):
+            with running(self.path) as url:
+                self.assertEqual(get(url + "/state")[0]["state"], self.state)
+
     def test_start_background_and_verified_reuse(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ResourceWarning)
