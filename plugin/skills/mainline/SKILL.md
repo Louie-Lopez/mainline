@@ -59,7 +59,9 @@ python TOOL/mainline.py describe --state STATE --stage Build --mainline "Turn th
 python TOOL/mainline.py describe --state STATE --parent Build --stage View --mainline "Make current work clear at a glance." --details "Show stage status and optional substages. Adapt to the available panel width."
 ```
 
-A goal explains what a stage achieves, not its current activity label. Missing stage goals fall back to the nearest parent/project goal. Optional `--details` adds 1–3 useful sentences about scope, contents, or outputs; it requires `--stage` and may be updated alone. Missing details stay hidden and never borrow parent text; an empty string clears them. Only the selected stage's details appear. Avoid repeating status or adding descriptions without useful content. Stable scope needs no repeated reads or writes.
+A goal explains what a stage achieves, not its current activity label. Missing stage goals fall back to the nearest parent/project goal. Optional `--details` adds a brief description of scope, contents, or outputs; it requires `--stage` and may be updated alone. Missing details stay hidden and never borrow parent text; an empty string clears them. Only the selected stage's details appear. Avoid repeating status or adding descriptions without useful content. Stable scope needs no repeated reads or writes.
+
+Choose the description's form from its actual logic. Keep a connected explanation as prose; use blank lines between distinct paragraphs. Use `1. ` lines only for ordered steps, `- ` lines for independent items, and two-space indentation only for genuine child points. Mix a short introduction with a list when helpful. The viewer renders these explicit markers; it does not infer structure. Prefer a few short sentences or items. Remove repetition before adding structure; do not force headings, parallel categories, or nested lists onto a simple explanation. Do not turn the description into an activity log. Literal newlines belong in the `--details` argument; HTML and other Markdown are displayed as text.
 
 ## Recovery
 

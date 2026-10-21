@@ -13,6 +13,7 @@
 main{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 28px;gap:42px}
 .mainline{margin:0;width:100%;max-width:1000px;text-align:center;font-size:16px;font-weight:500;letter-spacing:.025em;line-height:1.8;color:var(--heading);overflow-wrap:anywhere}.mainline[hidden]{display:none}
 .stage-details{margin:0;width:100%;max-width:680px;font-size:14px;line-height:1.9;color:var(--ink);overflow-wrap:anywhere;text-align:left}.stage-details[hidden]{display:none}
+.stage-details p{margin:0;white-space:pre-line}.stage-details>p+p,.stage-details>p+ul,.stage-details>p+ol,.stage-details>ul+p,.stage-details>ol+p,.stage-details>ul+ol,.stage-details>ol+ul{margin-top:.8em}.stage-details ul,.stage-details ol{margin:0;padding-left:1.6em}.stage-details li{padding-left:.2em;white-space:pre-line}.stage-details li+li{margin-top:.35em}.stage-details li>ul,.stage-details li>ol{margin-top:.35em}.stage-details li::marker{color:var(--accent)}
 .axis[data-stale="true"]~.stage-details{opacity:.4}
 .axis{list-style:none;display:flex;width:100%;max-width:1100px;padding:0;margin:0;transition:opacity .15s}
 .axis[data-stale="true"]{opacity:.4}.stage{flex:1;min-width:0;position:relative;display:flex;align-items:center;flex-direction:column;color:var(--ink);text-align:center}
@@ -73,7 +74,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 </head>
 <body>
 <header class="topbar"><span class="brand">Mainline</span><nav aria-label="Language and source"><a id="lang-en" href="?lang=en" lang="en" hreflang="en">EN</a><a id="lang-zh" href="?lang=zh" lang="zh-CN" hreflang="zh-CN">中文</a><a href="https://github.com/Louie-Lopez/mainline">GitHub ↗</a></nav></header>
-<main><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><p id="stage-details" class="stage-details" aria-live="polite" hidden></p></main>
+<main><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div></main>
 <footer class="demo-footer">
 <p id="hint"></p>
 <div id="scenarios" class="scenarios" role="group"></div>
@@ -127,6 +128,39 @@ function stageTextFor(group,field,singleLine=false){
 }
 const mainlinesFor=group=>stageTextFor(group,'stage_mainlines',true);
 const detailsFor=group=>stageTextFor(group,'stage_details');
+// Only explicit paragraph/list markers create structure; prose and HTML stay text.
+function renderDetails(value){
+  const target=document.getElementById('stage-details');
+  const fragment=document.createDocumentFragment();
+  let paragraph=null,lists=[];
+  for(const line of value.replace(/\r\n?/g,'\n').split('\n')){
+    if(!line.trim()){paragraph=null;lists=[];continue;}
+    const item=line.match(/^( *)(?:([-*]) |(\d+)[.)] )(.*)$/);
+    if(item){
+      paragraph=null;
+      const indent=item[1].length,type=item[3]?'ol':'ul';
+      while(lists.length&&lists.at(-1).indent>indent)lists.pop();
+      if(lists.length&&lists.at(-1).indent===indent&&lists.at(-1).type!==type)lists.pop();
+      if(!lists.length||lists.at(-1).indent!==indent){
+        const list=document.createElement(type);
+        (lists.at(-1)?.last||fragment).append(list);
+        lists.push({indent,type,list,last:null});
+      }
+      const current=lists.at(-1),li=document.createElement('li');
+      if(type==='ol')li.value=Number(item[3]);
+      li.textContent=item[4];current.list.append(li);current.last=li;
+    }else if(lists.length&&line.match(/^ */)[0].length>lists.at(-1).indent){
+      // Indented continuation belongs to the preceding item, not a new sibling.
+      lists.at(-1).last.append(document.createTextNode('\n'+line.trim()));
+    }else{
+      lists=[];
+      if(!paragraph){paragraph=document.createElement('p');fragment.append(paragraph);}
+      else paragraph.append(document.createTextNode('\n'));
+      paragraph.append(document.createTextNode(line.trim()));
+    }
+  }
+  target.replaceChildren(fragment);target.hidden=!value;
+}
 function render(s,force=false){
   if(!s || typeof s.task_id!=='string' || !Array.isArray(s.stages) || !s.stages.length || s.stages.some(x=>typeof x!=='string'||!x.trim())) throw Error('Invalid state');
   let statuses=s.stage_statuses;
@@ -168,8 +202,7 @@ function render(s,force=false){
   }
   document.getElementById('mainline').textContent=sentence;
   document.getElementById('mainline').hidden=!sentence;
-  document.getElementById('stage-details').textContent=detail;
-  document.getElementById('stage-details').hidden=!detail;
+  renderDetails(detail);
   const fragment=document.createDocumentFragment();
   function makeStage(name,status,peers,group,activity,parent=null){
     const statusText=status==='active'?(activity||text.active):text[status];
@@ -211,8 +244,8 @@ function render(s,force=false){
 }
 
 const demoMessages={
-  en:{title:'Mainline — interactive demo',hint:'Select a stage to explore. Switch examples to see progress change.',note:'Sample project · No installation · No AI connection',install:'Use Mainline in your project →',scenarios:'Example progress',nav:'Language and source',steps:['Starting','Parallel work','Fixing','Delivered'],goal:'Help people keep their whole project in view while working with AI.',names:['Define','Design','Build','Try','Share'],goals:['Agree on the problem and what a useful result looks like.','Keep the project view clear with as little interface as possible.','Turn the agreed design into a working tool.','Find out whether the tool helps during real projects.','Make the tool easy for other people to try and use.'],details:['A stable project goal and a few stages from start to finish.','One sentence, one axis, and details only when needed.','A local record, a responsive view, and instructions for the assistant.','Check whether parallel work is clear and updates stay unobtrusive.','A public repository, a simple demo, and clear installation instructions.'],children:['Record','View','Instructions'],childGoals:['Keep project scope and progress in one local record.','Make current work visible at a glance.','Update only when meaningful progress changes.'],childDetails:['Keep stages stable while their statuses change.','Adapt the axis to the window and reveal one group of substages at a time.','The assistant records progress; viewing the page does not call a model.'],fix:'Fixing',verify:'Verifying'},
-  zh:{title:'Mainline — 交互演示',hint:'点击环节查看细节，切换下方示例体验进展变化。',note:'示例项目 · 无需安装 · 不连接 AI 或你的项目',install:'在你的项目中使用 Mainline →',scenarios:'示例进展',nav:'语言与源码',steps:['开始','并行推进','修复错误','已交付'],goal:'帮助人们在和 AI 工作时，始终看得见整个项目。',names:['明确需求','设计方案','实现工具','实际试用','分享使用'],goals:['明确要解决的问题，以及怎样才算做好。','用尽可能少的界面，让项目全景清晰可见。','把约定的方案做成可用工具。','在真实项目中验证工具是否有帮助。','让其他人容易体验和使用这个工具。'],details:['确定稳定的项目目标，以及从开始到完成的几个阶段。','一句话、一条轴，需要时再展开细节。','保存本地记录，展示自适应视图，提供 AI 操作说明。','检验并行工作是否清楚，更新是否打扰对话。','提供公开仓库、简洁演示和清晰的安装说明。'],children:['状态记录','页面展示','操作规则'],childGoals:['用一份本地记录保留项目范围和进度。','让当前工作一眼可见。','只在进展有意义地变化时更新。'],childDetails:['阶段保持稳定，工作推进时改变状态。','随窗口宽度调整轴的方向，一次只展开一组子环节。','AI 明确记录进展；查看页面不会调用模型。'],fix:'修复错误',verify:'验证结果'}
+  en:{title:'Mainline — interactive demo',hint:'Select a stage to explore. Switch examples to see progress change.',note:'Sample project · No installation · No AI connection',install:'Use Mainline in your project →',scenarios:'Example progress',nav:'Language and source',steps:['Starting','Parallel work','Fixing','Delivered'],goal:'Help people keep their whole project in view while working with AI.',names:['Define','Design','Build','Try','Share'],goals:['Agree on the problem and what a useful result looks like.','Keep the project view clear with as little interface as possible.','Turn the agreed design into a working tool.','Find out whether the tool helps during real projects.','Make the tool easy for other people to try and use.'],details:['A stable project goal and a few stages from start to finish.','One sentence, one axis, and details only when needed.','A local record, a responsive view, and instructions for the assistant.','Try it in a real project for a few days.\n\n1. Return to the project and check where it stands.\n2. Note what helped or got in the way.\n3. Decide whether to keep using it.','A public repository, a simple demo, and clear installation instructions.'],children:['Record','View','Instructions'],childGoals:['Keep project scope and progress in one local record.','Make current work visible at a glance.','Update only when meaningful progress changes.'],childDetails:['Keep stages stable while their statuses change.','Adapt the axis to the window and reveal one group of substages at a time.','The assistant records progress; viewing the page does not call a model.'],fix:'Fixing',verify:'Verifying'},
+  zh:{title:'Mainline — 交互演示',hint:'点击环节查看细节，切换下方示例体验进展变化。',note:'示例项目 · 无需安装 · 不连接 AI 或你的项目',install:'在你的项目中使用 Mainline →',scenarios:'示例进展',nav:'语言与源码',steps:['开始','并行推进','修复错误','已交付'],goal:'帮助人们在和 AI 工作时，始终看得见整个项目。',names:['明确需求','设计方案','实现工具','实际试用','分享使用'],goals:['明确要解决的问题，以及怎样才算做好。','用尽可能少的界面，让项目全景清晰可见。','把约定的方案做成可用工具。','在真实项目中验证工具是否有帮助。','让其他人容易体验和使用这个工具。'],details:['确定稳定的项目目标，以及从开始到完成的几个阶段。','一句话、一条轴，需要时再展开细节。','保存本地记录，展示自适应视图，提供 AI 操作说明。','放进真实项目里用几天。\n\n1. 隔天回来，看看能否快速接上进度。\n2. 记录帮上忙或造成负担的地方。\n3. 再决定是否继续使用。','提供公开仓库、简洁演示和清晰的安装说明。'],children:['状态记录','页面展示','操作规则'],childGoals:['用一份本地记录保留项目范围和进度。','让当前工作一眼可见。','只在进展有意义地变化时更新。'],childDetails:['阶段保持稳定，工作推进时改变状态。','随窗口宽度调整轴的方向，一次只展开一组子环节。','AI 明确记录进展；查看页面不会调用模型。'],fix:'修复错误',verify:'验证结果'}
 };
 const demo=demoMessages[language];
 document.title=demo.title;

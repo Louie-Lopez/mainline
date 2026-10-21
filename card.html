@@ -11,6 +11,7 @@
 main{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 28px;gap:42px}
 .mainline{margin:0;width:100%;max-width:1000px;text-align:center;font-size:16px;font-weight:500;letter-spacing:.025em;line-height:1.8;color:var(--heading);overflow-wrap:anywhere}.mainline[hidden]{display:none}
 .stage-details{margin:0;width:100%;max-width:680px;font-size:14px;line-height:1.9;color:var(--ink);overflow-wrap:anywhere;text-align:left}.stage-details[hidden]{display:none}
+.stage-details p{margin:0;white-space:pre-line}.stage-details>p+p,.stage-details>p+ul,.stage-details>p+ol,.stage-details>ul+p,.stage-details>ol+p,.stage-details>ul+ol,.stage-details>ol+ul{margin-top:.8em}.stage-details ul,.stage-details ol{margin:0;padding-left:1.6em}.stage-details li{padding-left:.2em;white-space:pre-line}.stage-details li+li{margin-top:.35em}.stage-details li>ul,.stage-details li>ol{margin-top:.35em}.stage-details li::marker{color:var(--accent)}
 .axis[data-stale="true"]~.stage-details{opacity:.4}
 .axis{list-style:none;display:flex;width:100%;max-width:1100px;padding:0;margin:0;transition:opacity .15s}
 .axis[data-stale="true"]{opacity:.4}.stage{flex:1;min-width:0;position:relative;display:flex;align-items:center;flex-direction:column;color:var(--ink);text-align:center}
@@ -53,7 +54,7 @@ button.node[aria-pressed="true"]>.label{text-decoration:underline;text-decoratio
 </style>
 </head>
 <body>
-<main><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><p id="stage-details" class="stage-details" aria-live="polite" hidden></p></main>
+<main><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div></main>
 <script>
 'use strict';
 const axis=document.getElementById('axis');
@@ -100,6 +101,39 @@ function stageTextFor(group,field,singleLine=false){
 }
 const mainlinesFor=group=>stageTextFor(group,'stage_mainlines',true);
 const detailsFor=group=>stageTextFor(group,'stage_details');
+// Only explicit paragraph/list markers create structure; prose and HTML stay text.
+function renderDetails(value){
+  const target=document.getElementById('stage-details');
+  const fragment=document.createDocumentFragment();
+  let paragraph=null,lists=[];
+  for(const line of value.replace(/\r\n?/g,'\n').split('\n')){
+    if(!line.trim()){paragraph=null;lists=[];continue;}
+    const item=line.match(/^( *)(?:([-*]) |(\d+)[.)] )(.*)$/);
+    if(item){
+      paragraph=null;
+      const indent=item[1].length,type=item[3]?'ol':'ul';
+      while(lists.length&&lists.at(-1).indent>indent)lists.pop();
+      if(lists.length&&lists.at(-1).indent===indent&&lists.at(-1).type!==type)lists.pop();
+      if(!lists.length||lists.at(-1).indent!==indent){
+        const list=document.createElement(type);
+        (lists.at(-1)?.last||fragment).append(list);
+        lists.push({indent,type,list,last:null});
+      }
+      const current=lists.at(-1),li=document.createElement('li');
+      if(type==='ol')li.value=Number(item[3]);
+      li.textContent=item[4];current.list.append(li);current.last=li;
+    }else if(lists.length&&line.match(/^ */)[0].length>lists.at(-1).indent){
+      // Indented continuation belongs to the preceding item, not a new sibling.
+      lists.at(-1).last.append(document.createTextNode('\n'+line.trim()));
+    }else{
+      lists=[];
+      if(!paragraph){paragraph=document.createElement('p');fragment.append(paragraph);}
+      else paragraph.append(document.createTextNode('\n'));
+      paragraph.append(document.createTextNode(line.trim()));
+    }
+  }
+  target.replaceChildren(fragment);target.hidden=!value;
+}
 function render(s,force=false){
   if(!s || typeof s.task_id!=='string' || !Array.isArray(s.stages) || !s.stages.length || s.stages.some(x=>typeof x!=='string'||!x.trim())) throw Error('Invalid state');
   let statuses=s.stage_statuses;
@@ -141,8 +175,7 @@ function render(s,force=false){
   }
   document.getElementById('mainline').textContent=sentence;
   document.getElementById('mainline').hidden=!sentence;
-  document.getElementById('stage-details').textContent=detail;
-  document.getElementById('stage-details').hidden=!detail;
+  renderDetails(detail);
   const fragment=document.createDocumentFragment();
   function makeStage(name,status,peers,group,activity,parent=null){
     const statusText=status==='active'?(activity||text.active):text[status];

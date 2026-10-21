@@ -20,7 +20,7 @@ Mainline is a local project view that you use alongside an AI assistant. You ask
 
 - **Preserves the project view.** Stages cover the agreed project from start to outcome and stay fixed unless its scope materially changes.
 - **Shows current work.** Multiple stages can be active, with short labels such as “Fixing” or “Verifying.”
-- **Reveals detail on demand.** Select a stage for its goal, optional description, and one level of substages. The overview remains small.
+- **Reveals detail on demand.** Select a stage for its goal, optional description, and one level of substages. The overview remains small. Descriptions can use short paragraphs, ordered steps, or parallel items, with indentation for genuine child points.
 - **Resumes across chats.** Reuse the same project's local state file instead of reconstructing progress from every message.
 - **Keeps overhead small.** No model calls for viewing, clicking, or refreshing. The page checks local state every 30 seconds and pauses while hidden; the agent writes only meaningful changes.
 
