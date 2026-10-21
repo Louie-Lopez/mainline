@@ -1,6 +1,7 @@
 """Build the public demo with the real card renderer and fictional project data."""
 
 from pathlib import Path
+from build_branches import build as build_branches
 
 ROOT = Path(__file__).resolve().parent
 
@@ -24,3 +25,4 @@ def build():
 
 if __name__ == "__main__":
     print(build())
+    print(build_branches())

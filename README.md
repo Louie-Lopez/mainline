@@ -35,6 +35,8 @@ The axis shows the order of project stages, rather than time spent. Progress com
 
 </details>
 
+For projects with distinct possible directions, try the [branch experiment](https://louie-lopez.github.io/mainline/branches.html?lang=en). It keeps alternative routes under the stage where they diverge, with a separate view for each. This is an early interaction demo with sample data; branch creation and progress updates are not part of the installed tool yet.
+
 ## Where it works
 
 This beta is mainly for Codex desktop. Plugin installation and use have been tested on Windows. The same package is checked on Windows, macOS, and Linux for local startup, progress updates, and browser interaction. See the [automated test results](https://github.com/Louie-Lopez/mainline/actions/workflows/compatibility.yml).

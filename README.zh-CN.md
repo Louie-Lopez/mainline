@@ -35,6 +35,8 @@ Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目
 
 </details>
 
+项目出现明显不同的方案走向时，可以试试[支线实验](https://louie-lopez.github.io/mainline/branches.html?lang=zh)：从产生分岔的环节进入，分别查看各条路线，再回到主线。目前是使用示例数据的交互实验，安装版暂未加入支线创建与进度更新。
+
 ## 适合哪些环境？
 
 当前测试版主要面向 Codex 桌面端，已在 Windows 上验证插件安装和使用。同一份程序也在 Windows、macOS、Linux 上自动测试本地启动、进展更新和页面交互，结果见[自动测试记录](https://github.com/Louie-Lopez/mainline/actions/workflows/compatibility.yml)。

@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mainline — branch experiment</title>
+<style>
+:root{color-scheme:light;--bg:#fcf9f3;--ink:#394b68;--line:#d8cbb4;--active:#233c63;--halo:#eee3cf;--accent:#ad874b;--heading:#203655;--badge:#f0e3c9;--badge-ink:#62491f}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg)}body{font:15px/1.5 system-ui,"Microsoft YaHei",sans-serif}
+main{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 28px;gap:42px}
+.mainline{margin:0;width:100%;max-width:1000px;text-align:center;font-size:16px;font-weight:500;letter-spacing:.025em;line-height:1.8;color:var(--heading);overflow-wrap:anywhere}.mainline[hidden]{display:none}
+.stage-details{margin:0;width:100%;max-width:680px;font-size:14px;line-height:1.9;color:var(--ink);overflow-wrap:anywhere;text-align:left}.stage-details[hidden]{display:none}
+.stage-details p{margin:0;white-space:pre-line}.stage-details>p+p,.stage-details>p+ul,.stage-details>p+ol,.stage-details>ul+p,.stage-details>ol+p,.stage-details>ul+ol,.stage-details>ol+ul{margin-top:.8em}.stage-details ul,.stage-details ol{margin:0;padding-left:1.6em}.stage-details li{padding-left:.2em;white-space:pre-line}.stage-details li+li{margin-top:.35em}.stage-details li>ul,.stage-details li>ol{margin-top:.35em}.stage-details li::marker{color:var(--accent)}
+.axis[data-stale="true"]~.stage-details{opacity:.4}
+.axis{list-style:none;display:flex;width:100%;max-width:1100px;padding:0;margin:0;transition:opacity .15s}
+.axis[data-stale="true"]{opacity:.4}.stage{flex:1;min-width:0;position:relative;display:flex;align-items:center;flex-direction:column;color:var(--ink);text-align:center}
+.stage::after{content:'';position:absolute;height:2px;left:calc(50% + 12px);width:calc(100% - 24px);top:9px;background:var(--line)}.stage:last-child::after{display:none}
+.dot{position:relative;z-index:1;width:20px;height:20px;border:2px solid var(--line);background:var(--bg);border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--bg)}
+.label{margin:16px 8px 0;overflow-wrap:anywhere}.stage[data-status="done"]>.node>.dot{background:var(--active);border-color:var(--active)}.stage[data-status="done"]:has(+.stage[data-status="done"])::after{background:var(--active)}
+.stage{font-weight:400}.stage[data-status="active"]{color:var(--active);font-weight:700}.stage[data-status="active"]>.node>.dot{border:6px solid var(--active);box-shadow:0 0 0 5px var(--halo),0 0 0 6px var(--accent)}
+.activity{position:absolute;top:-36px;left:50%;transform:translateX(-50%);background:var(--badge);color:var(--badge-ink);font-size:11px;line-height:22px;padding:0 9px;border-radius:4px;white-space:nowrap;font-weight:600}
+.axis{margin-top:24px}
+.node{display:flex;flex-direction:column;align-items:center;width:100%;position:relative;color:inherit;font:inherit;text-align:inherit}
+button.node{border:0;padding:0;background:none;cursor:pointer}button.node:focus-visible{outline:2px solid var(--active);outline-offset:8px;border-radius:4px}
+button.node[aria-pressed="true"]>.label{text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:1px;text-underline-offset:5px}
+.chevron{display:inline-block;margin-left:6px;font-size:12px;color:var(--ink)}
+.children{display:none}.stage.expanded>.children{display:flex}
+.axis:has(>.expanded){margin-top:90px}
+.axis[data-layout="horizontal"]>.expanded>.node{position:absolute;top:-68px}
+.axis[data-layout="horizontal"]>.expanded>.node>.dot,.axis[data-layout="horizontal"]>.expanded>.node>.activity{display:none}
+.axis[data-layout="horizontal"]>.expanded>.node>.label{margin:0}
+.children{list-style:none;padding:0;margin:0;width:100%;position:relative}
+.children::before{content:'';position:absolute;inset:-18px 3px -12px;border:1px solid var(--line);border-radius:12px;pointer-events:none}
+.axis[data-layout="horizontal"]>.expanded::after{left:calc(100% - var(--child-half) + 12px);width:calc(var(--child-half) + var(--unit-half) - 24px)}
+.axis[data-layout="vertical"] .node{flex-direction:row;align-items:flex-start;width:auto}
+.axis[data-layout="vertical"]>.expanded{display:block}
+.axis[data-layout="vertical"]>.expanded>.children{flex-direction:column;margin:12px 0 28px 28px;width:calc(100% - 28px)}
+.axis[data-layout="vertical"]>.expanded>.children::before{inset:-12px -4px -12px 0}
+.axis[data-layout="vertical"]>.expanded>.node>.label{margin-bottom:0}
+.axis[data-layout="vertical"]:has(>.expanded){margin-top:24px}
+.axis[data-layout="vertical"]{flex-direction:column;width:min(320px,100%)}
+.axis[data-layout="vertical"] .stage{flex:none;flex-direction:row;align-items:flex-start;min-height:88px;text-align:left;padding-left:12px}
+.axis[data-layout="vertical"] .stage:last-child{min-height:20px}
+.axis[data-layout="vertical"] .stage::after{left:21px;top:32px;width:2px;height:calc(100% - 24px)}
+.axis[data-layout="vertical"] .label{margin:-2px 0 22px 26px;max-width:calc(100% - 54px)}
+.axis[data-layout="vertical"] .activity{position:static;transform:none;flex:none;margin:-1px 0 0 12px}.axis[data-layout="vertical"] .stage[data-status="active"] .label{max-width:calc(100% - 125px)}
+.axis[data-layout="vertical"] .node{width:100%}
+.axis[data-layout="vertical"] .node>.label{flex:1;min-width:0;max-width:none;margin-right:4px}
+.axis[data-layout="vertical"] .stage[data-status="active"] .node>.label{max-width:none}
+.axis[data-layout="vertical"] .activity{max-width:45%;white-space:normal;overflow-wrap:anywhere;text-align:center}
+
+@media(prefers-reduced-motion:reduce){.axis{transition:none}}
+
+/* A quiet paper-and-ink treatment; no extra panels around the project. */
+:root{--bg:#fcfaf5;--ink:#4c5b70;--line:#ded5c5;--active:#294565;--halo:#f0e8d9;--accent:#a08049;--heading:#243c58;--badge:#f5eddd;--badge-ink:#745a2e}
+[hidden]{display:none!important}
+body{-webkit-font-smoothing:antialiased}
+main{padding:48px 28px;gap:48px}
+.mainline{max-width:860px;font-size:17px;font-weight:500;line-height:1.85;letter-spacing:.015em;text-wrap:balance}
+.label{margin-top:18px;line-height:1.6}
+.stage[data-status="active"]{font-weight:650}
+.stage[data-status="active"]>.node>.dot{border-width:5px;box-shadow:0 0 0 5px var(--bg),0 0 0 6px #c0a570}
+.activity{top:-43px;padding:0 10px;line-height:23px;border:1px solid #e9dcc3;border-radius:100px;font-size:11px;font-weight:500}
+.stage-details{max-width:580px;line-height:1.9;color:var(--ink);text-wrap:pretty}
+.children{isolation:isolate}
+.children::before{z-index:-1;border-color:#e4dccf;background:#fffdf8;border-radius:14px}
+.axis[data-layout="vertical"] .activity{margin-top:-2px}
+.axis[data-layout="vertical"] .stage{min-height:92px}
+.axis[data-layout="vertical"]>.stage:last-child{min-height:24px}
+.axis[data-layout="vertical"]>.expanded{min-height:0}
+.axis[data-layout="vertical"]>.expanded>.children{margin-top:18px}
+.axis[data-layout="vertical"]>.expanded>.children::before{inset:-12px -4px -12px 0}
+button.branch-access,.route-home,.route-switch,.branch-choice{font:inherit;cursor:pointer;color:var(--ink);touch-action:manipulation}
+button.branch-access{display:flex;align-items:center;gap:7px;min-height:30px;border:1px solid #e2d7c3;background:#f7f2e8;border-radius:100px;font-size:12px;line-height:22px;padding:3px 11px;margin-top:15px;font-weight:450;white-space:nowrap;color:#715b36}
+.branch-access:hover,.route-switch:hover{background:#eee5d5;border-color:#c9b58e;color:var(--heading)}
+.route-home:hover{color:var(--active);text-decoration:underline;text-underline-offset:5px}
+button.branch-access:focus-visible,.route-home:focus-visible,.route-switch:focus-visible,.branch-choice:focus-visible{outline:2px solid var(--active);outline-offset:4px}
+.branch-access svg,.route-switch svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.branch-chevron{font-size:10px;color:#967c50;transition:transform .14s}
+[aria-expanded="true"]>.branch-chevron{transform:rotate(180deg)}
+.axis[data-layout="horizontal"]>.expanded>.branch-access{margin-top:28px}
+.axis[data-layout="vertical"]>.stage>.branch-access{position:absolute;left:58px;top:34px;margin-top:0}
+.axis[data-layout="vertical"]>.expanded>.branch-access{position:static;margin:0 0 28px 46px}
+#route-path{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;max-width:100%;color:var(--ink);font-size:12px;margin-bottom:-24px;line-height:1.8}
+.route-home{border:0;background:none;padding:4px 2px;font-size:12px;border-radius:4px}
+.route-separator{color:#b6a68a;font-size:15px}
+.route-switch{display:inline-flex;align-items:center;gap:7px;border:1px solid #e2d7c3;background:#f7f2e8;color:#715b36;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:500}
+#branch-picker{position:fixed;z-index:10;width:264px;max-width:calc(100vw - 32px);padding:6px;border:1px solid #e2d8c8;border-radius:14px;background:#fffdf8;box-shadow:0 12px 32px #3a311514,0 2px 5px #3a311506}
+.branch-choice{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;border:1px solid transparent;background:transparent;text-align:left;border-radius:9px;padding:13px 12px;font-size:14px;line-height:1.5}
+.branch-choice+.branch-choice{margin-top:3px}
+.branch-choice:hover,.branch-choice[aria-current="true"]{background:#f4eddf}
+.branch-choice[aria-current="true"]{border-color:#e5d8c1}
+.branch-choice small{font-size:11px;color:#796749;font-weight:400;white-space:nowrap}
+@media(max-width:520px){main{padding:38px 24px;gap:38px}.mainline{font-size:16px;line-height:1.85}#route-path{gap:7px;margin-bottom:-15px}.stage-details{font-size:13px}.route-switch{max-width:100%;flex-wrap:wrap;justify-content:center}}
+@media(prefers-reduced-motion:reduce){.branch-chevron{transition:none}}
+
+</style>
+</head>
+<body>
+<main><nav id="route-path" hidden></nav><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div></main><div id="branch-picker" role="dialog" hidden></div>
+<script>
+'use strict';
+const axis=document.getElementById('axis');
+const messages={
+  en:{axis:'Project stages',active:'In progress',done:'Completed',pending:'Not started',view:'View stage goal',collapse:'Collapse substages',expand:'Expand substages',children:name=>'Substages of '+name,stale:'Project stages, connection or read failed, showing last known position',separator:', '},
+  zh:{axis:'项目阶段',active:'进行中',done:'已完成',pending:'未开始',view:'查看阶段主线',collapse:'收起子阶段',expand:'展开子阶段',children:name=>name+'的子阶段',stale:'项目阶段，连接或读取失败，显示上次位置',separator:'，'}
+};
+const languageOf=value=>String(value||'').toLowerCase().split(/[-_]/)[0];
+const requested=languageOf(new URLSearchParams(location.search).get('lang'));
+const language=Object.hasOwn(messages,requested)?requested:(navigator.languages||[navigator.language]).map(languageOf).find(value=>Object.hasOwn(messages,value))||'en';
+const text=messages[language];
+document.documentElement.lang=language==='zh'?'zh-CN':language;
+axis.setAttribute('aria-label',text.axis);
+let task=null, signature='', stages=[], currentState=null, expanded=null, selected=null;
+const own=(map,key)=>map&&Object.hasOwn(map,key)?map[key]:undefined;
+const stageKey=(parent,name)=>JSON.stringify([parent,name]);
+function layout(){
+  const longest=stages.reduce((n,s)=>Math.max(n,Array.from(s).length),0);
+  const longestBadge=[...axis.querySelectorAll('.activity')].reduce((n,e)=>Math.max(n,Array.from(e.textContent).length),0);
+  const perStage=Math.max(106,Math.min(180,longest*(language==='zh'?15:8)+24),longestBadge*11+24);
+  axis.dataset.layout=Math.min(1100,window.innerWidth-56)>=Math.max(380,stages.length*perStage)?'horizontal':'vertical';
+  const horizontal=axis.dataset.layout==='horizontal';
+  [...axis.children].forEach(li=>li.style.flex=horizontal&&li.classList.contains('expanded')?li.dataset.count:'');
+  const unit=axis.clientWidth/Math.max(1,stages.length);
+  axis.style.setProperty('--unit-half',unit/2+'px');
+  axis.style.setProperty('--child-half',unit/2+'px');
+}
+new ResizeObserver(layout).observe(document.documentElement);
+function labelsFor(group,statuses=group.stage_statuses){
+  const labels=group.stage_labels===undefined?{}:group.stage_labels;
+  if(!labels||typeof labels!=='object'||Array.isArray(labels))throw Error('Invalid labels');
+  for(const [name,label] of Object.entries(labels)){
+    if(!group.stages.includes(name)||statuses[group.stages.indexOf(name)]!=='active'||typeof label!=='string'||!label.trim()||Array.from(label).length>12||/[\r\n]/.test(label))throw Error('Invalid label');
+  }
+  return labels;
+}
+function stageTextFor(group,field,singleLine=false){
+  const lines=group[field]===undefined?{}:group[field];
+  if(!lines||typeof lines!=='object'||Array.isArray(lines))throw Error('Invalid stage text');
+  for(const [name,line] of Object.entries(lines)){
+    if(!group.stages.includes(name)||typeof line!=='string'||!line.trim()||(singleLine&&/[\r\n]/.test(line)))throw Error('Invalid stage text');
+  }
+  return lines;
+}
+const mainlinesFor=group=>stageTextFor(group,'stage_mainlines',true);
+const detailsFor=group=>stageTextFor(group,'stage_details');
+// Only explicit paragraph/list markers create structure; prose and HTML stay text.
+function renderDetails(value){
+  const target=document.getElementById('stage-details');
+  const fragment=document.createDocumentFragment();
+  let paragraph=null,lists=[];
+  for(const line of value.replace(/\r\n?/g,'\n').split('\n')){
+    if(!line.trim()){paragraph=null;lists=[];continue;}
+    const item=line.match(/^( *)(?:([-*]) |(\d+)[.)] )(.*)$/);
+    if(item){
+      paragraph=null;
+      const indent=item[1].length,type=item[3]?'ol':'ul';
+      while(lists.length&&lists.at(-1).indent>indent)lists.pop();
+      if(lists.length&&lists.at(-1).indent===indent&&lists.at(-1).type!==type)lists.pop();
+      if(!lists.length||lists.at(-1).indent!==indent){
+        const list=document.createElement(type);
+        (lists.at(-1)?.last||fragment).append(list);
+        lists.push({indent,type,list,last:null});
+      }
+      const current=lists.at(-1),li=document.createElement('li');
+      if(type==='ol')li.value=Number(item[3]);
+      li.textContent=item[4];current.list.append(li);current.last=li;
+    }else if(lists.length&&line.match(/^ */)[0].length>lists.at(-1).indent){
+      // Indented continuation belongs to the preceding item, not a new sibling.
+      lists.at(-1).last.append(document.createTextNode('\n'+line.trim()));
+    }else{
+      lists=[];
+      if(!paragraph){paragraph=document.createElement('p');fragment.append(paragraph);}
+      else paragraph.append(document.createTextNode('\n'));
+      paragraph.append(document.createTextNode(line.trim()));
+    }
+  }
+  target.replaceChildren(fragment);target.hidden=!value;
+}
+function render(s,force=false){
+  if(!s || typeof s.task_id!=='string' || !Array.isArray(s.stages) || !s.stages.length || s.stages.some(x=>typeof x!=='string'||!x.trim())) throw Error('Invalid state');
+  let statuses=s.stage_statuses;
+  if(statuses===undefined){
+    if(!Number.isInteger(s.current_stage)||s.current_stage<0||s.current_stage>=s.stages.length||typeof s.completed!=='boolean')throw Error('Invalid state');
+    statuses=s.stages.map((_,i)=>s.completed||i<s.current_stage?'done':i===s.current_stage?'active':'pending');
+  }
+  if(!Array.isArray(statuses)||statuses.length!==s.stages.length||statuses.some(x=>!['pending','active','done'].includes(x)))throw Error('Invalid states');
+  if(task && task!==s.task_id) throw Error('Wrong task');
+  if(s.mainline!==undefined && typeof s.mainline!=='string')throw Error('Invalid mainline');
+  const subs=s.substages||{};
+  if(typeof subs!=='object'||Array.isArray(subs))throw Error('Invalid substages');
+  for(const [parent,group] of Object.entries(subs)){
+    if(!s.stages.includes(parent)||!group||!Array.isArray(group.stages)||!group.stages.length||group.stages.some(x=>typeof x!=='string'||!x.trim())||!Array.isArray(group.stage_statuses)||group.stage_statuses.length!==group.stages.length||group.stage_statuses.some(x=>!['pending','active','done'].includes(x)))throw Error('Invalid substages');
+    labelsFor(group);
+    mainlinesFor(group);
+    detailsFor(group);
+  }
+  const labels=labelsFor(s,statuses);
+  const mainlines=mainlinesFor(s);
+  const details=detailsFor(s);
+  const next=JSON.stringify([s.mainline,s.stages,statuses,subs,labels,mainlines,details]);
+  if(next===signature&&!force)return;
+  const focused=document.activeElement?.dataset.key;
+  task=s.task_id;currentState=s;
+  if(!Object.hasOwn(subs,expanded))expanded=null;
+  if(selected){
+    const group=selected.parent===null?s:own(subs,selected.parent);
+    if(!group?.stages.includes(selected.name))selected=null;
+  }
+  stages=s.stages.flatMap(name=>name===expanded?subs[name].stages:[name]);
+  let sentence=s.mainline||'',detail='';
+  if(selected){
+    const parentLine=selected.parent===null?sentence:(own(mainlines,selected.parent)||sentence);
+    const lines=selected.parent===null?mainlines:mainlinesFor(subs[selected.parent]);
+    sentence=own(lines,selected.name)||parentLine;
+    const descriptions=selected.parent===null?details:detailsFor(subs[selected.parent]);
+    detail=own(descriptions,selected.name)||'';
+  }
+  document.getElementById('mainline').textContent=sentence;
+  document.getElementById('mainline').hidden=!sentence;
+  renderDetails(detail);
+  const fragment=document.createDocumentFragment();
+  function makeStage(name,status,peers,group,activity,parent=null){
+    const statusText=status==='active'?(activity||text.active):text[status];
+    const li=document.createElement('li');li.className='stage';li.dataset.status=status;
+    li.setAttribute('aria-label',[name,statusText].join(text.separator));
+    if(status==='active'&&peers.filter(x=>x==='active').length===1)li.setAttribute('aria-current','step');
+    const node=document.createElement('button');node.className='node';node.type='button';
+    const key=stageKey(parent,name),isSelected=Boolean(selected?.name===name&&selected.parent===parent);
+    node.dataset.key=key;node.dataset.stage=name;
+    node.setAttribute('aria-pressed',String(isSelected));node.setAttribute('aria-label',[name,statusText,text.view].join(text.separator));
+    if(isSelected&&detail)node.setAttribute('aria-describedby','stage-details');
+    node.onclick=()=>{
+      if(isSelected||(group&&expanded===name)){selected=null;expanded=null;}
+      else{selected={parent,name};if(parent===null)expanded=group?name:null;}
+      render(currentState,true);
+      const buttons=[...axis.querySelectorAll('button')];
+      (buttons.find(b=>b.dataset.key===key)||buttons.find(b=>b.dataset.key===stageKey(null,parent)))?.focus({preventScroll:true});
+    };
+    const dot=document.createElement('span');dot.className='dot';dot.setAttribute('aria-hidden','true');
+    dot.textContent=status==='done'?'✓':'';
+    const label=document.createElement('span');label.className='label';label.textContent=name;
+    node.append(dot,label);li.append(node);
+    if(status==='active'){const badge=document.createElement('span');badge.className='activity';badge.textContent=statusText;badge.setAttribute('aria-hidden','true');node.append(badge);}
+    if(group){
+      const isOpen=expanded===name;
+      node.type='button';node.dataset.parent=name;node.setAttribute('aria-expanded',String(isOpen));
+      const chevron=document.createElement('span');chevron.className='chevron';chevron.textContent=isOpen?'▴':'▾';chevron.setAttribute('aria-hidden','true');label.after(chevron);
+      // Keep the disclosure mark beside the label without changing its accessible text.
+      const labelWrap=document.createElement('span');labelWrap.className='label';label.className='label-text';label.replaceWith(labelWrap);labelWrap.append(label,chevron);
+      node.setAttribute('aria-label',[name,statusText,isOpen?text.collapse:text.expand].join(text.separator));
+      li.classList.toggle('expanded',isOpen);li.dataset.count=group.stages.length;
+      if(isOpen){const children=document.createElement('ol');children.className='children';children.setAttribute('aria-label',text.children(name));children.id='children-'+s.stages.indexOf(name);node.setAttribute('aria-controls',children.id);const childLabels=labelsFor(group);group.stages.forEach((child,j)=>children.append(makeStage(child,group.stage_statuses[j],group.stage_statuses,null,Object.hasOwn(childLabels,child)?childLabels[child]:null,name)));li.append(children);}
+    }
+    return li;
+  }
+  s.stages.forEach((name,i)=>fragment.append(makeStage(name,statuses[i],statuses,Object.hasOwn(subs,name)?subs[name]:null,Object.hasOwn(labels,name)?labels[name]:null)));
+  axis.replaceChildren(fragment);signature=next;renderBranchChrome();layout();
+  if(focused)[...axis.querySelectorAll('button')].find(b=>b.dataset.key===focused)?.focus({preventScroll:true});
+}
+
+const branchSamples={"zh": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "打造自己的 AI 私人助理，让日程、资料和待办事项在日常生活中衔接起来。", "stages": ["明确需求", "整理资料", "打通任务", "真实试用", "稳定使用"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_mainlines": {"明确需求": "找出日常最需要帮助的事情，确定首版助理的能力范围。", "整理资料": "整理必要的个人资料和偏好，明确可访问的信息范围。", "打通任务": "让助理能够协助安排日程、查找资料和跟进事项。", "真实试用": "把已完成的能力放进日常生活，检验是否省心可靠。", "稳定使用": "解决试用中的关键问题，形成可以持续使用的个人助理。"}, "substages": {"打通任务": {"stages": ["日程安排", "资料查找", "事项跟进"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"日程安排": "整理时间安排，及时发现冲突和需要确认的事项。", "资料查找": "从自己的资料中找到答案，并能回到原文核对。", "事项跟进": "把约定和待办接续起来，清楚知道下一步要做什么。"}, "stage_details": {"资料查找": "支持按问题查找笔记与文档，回答时附上对应出处。"}}}, "stage_labels": {"打通任务": "探索方案", "真实试用": "试用已有能力"}}, "branches": [{"id": "cloud", "name": "云端接入", "parent": "打通任务", "mainline": "接入已有云端服务，让日程、资料和待办尽快协同起来。", "stages": ["连接服务", "串起任务", "核对权限", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"串起任务": "接通日程"}, "stage_mainlines": {"连接服务": "连接已有日历、笔记和待办服务。", "串起任务": "让会议安排、相关资料和后续待办衔接起来。", "核对权限": "确认每项服务能访问什么，重要操作由本人确认。", "日常试用": "用真实日程检验服务连接是否稳定、是否省心。"}, "stage_details": {"串起任务": "先从日历读取会议，再找出相关资料，最后生成会后待办。"}}, {"id": "local", "name": "本地运行", "parent": "打通任务", "mainline": "让助理在本机处理个人资料，并能在离线时完成常用任务。", "stages": ["整理本地资料", "本地检索", "离线任务", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"本地检索": "修复引用"}, "stage_mainlines": {"整理本地资料": "整理可供助理使用的本地笔记和文档。", "本地检索": "从本地资料找到答案，并准确指向原文。", "离线任务": "在断网时完成资料查询和待办整理。", "日常试用": "确认本地助理在常用设备上足够快、足够可靠。"}, "stage_details": {"本地检索": "已经能找到相关文档，正在修复回答引用跳错段落的问题。"}}]}, "en": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "Build a personal AI assistant that connects your calendar, knowledge, and everyday tasks.", "stages": ["Define needs", "Gather context", "Connect tasks", "Try it daily", "Keep it useful"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_labels": {"Connect tasks": "Exploring", "Try it daily": "Trying it"}, "stage_mainlines": {"Define needs": "Choose the everyday tasks where an assistant would help most.", "Gather context": "Organize personal information and decide what the assistant may access.", "Connect tasks": "Help with scheduling, finding information, and following up.", "Try it daily": "Use the working parts in daily life and see whether they save effort.", "Keep it useful": "Resolve the problems that matter and make the assistant reliable over time."}, "substages": {"Connect tasks": {"stages": ["Scheduling", "Find answers", "Follow up"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"Scheduling": "Keep plans organized and flag conflicts that need attention.", "Find answers": "Find answers in personal documents and link back to the original source.", "Follow up": "Connect commitments and tasks so the next step is clear."}, "stage_details": {"Find answers": "Search notes and documents by question, with sources attached to each answer."}}}}, "branches": [{"id": "cloud", "name": "Cloud services", "parent": "Connect tasks", "mainline": "Connect existing cloud services to bring calendars, documents, and tasks together quickly.", "stages": ["Connect services", "Link tasks", "Check access", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Link tasks": "Calendar"}, "stage_mainlines": {"Connect services": "Connect existing calendar, notes, and task services.", "Link tasks": "Connect meetings with relevant documents and follow-up tasks.", "Check access": "Check what each service can access and require approval for important actions.", "Try it daily": "Use real plans to check whether service connections are reliable and useful."}, "stage_details": {"Link tasks": "Read a meeting from the calendar, find relevant documents, then draft follow-up tasks."}}, {"id": "local", "name": "Local processing", "parent": "Connect tasks", "mainline": "Keep personal information on your device and make everyday tasks work offline.", "stages": ["Organize files", "Local search", "Offline tasks", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Local search": "Fixing links"}, "stage_mainlines": {"Organize files": "Organize the local notes and documents available to the assistant.", "Local search": "Find answers in local documents and point to the right source passage.", "Offline tasks": "Find information and organize tasks without an internet connection.", "Try it daily": "Check that the local assistant is fast and reliable on everyday devices."}, "stage_details": {"Local search": "Relevant documents can already be found. Fixing source links that open the wrong passage."}}]}};
+const branchText={
+  en:{title:'Mainline — branch experiment',home:'← Mainline',return:'Return to project mainline',path:'Current location',picker:'Choose a branch',current:'Viewing',exploring:'Exploring',count:n=>n+' branches',open:(parent,n)=>parent+', view '+n+' branches',route:name=>'Branch · '+name,switch:name=>'Current branch: '+name+', switch branch'},
+  zh:{title:'Mainline · 支线实验',home:'← 主线',return:'返回项目主线',path:'当前位置',picker:'选择支线',current:'当前查看',exploring:'探索中',count:n=>n+' 条支线',open:(parent,n)=>parent+'，查看 '+n+' 条支线',route:name=>'支线 · '+name,switch:name=>'当前支线：'+name+'，切换支线'}
+}[language];
+const experiment=branchSamples[language];
+document.title=branchText.title;
+document.getElementById('route-path').setAttribute('aria-label',branchText.path);
+document.getElementById('branch-picker').setAttribute('aria-label',branchText.picker);
+
+// Branches are explicit sample routes. No background work or project writes.
+const routePath=document.getElementById('route-path');
+const picker=document.getElementById('branch-picker');
+const routeViews=new Map();
+let route='main',pickerAnchor=null;
+const branchById=id=>experiment.branches.find(branch=>branch.id===id);
+const validRoute=id=>branchById(id)?id:'main';
+const routeFromUrl=()=>validRoute(location.hash.slice(1));
+
+function closePicker(restoreFocus=false){
+  picker.hidden=true;
+  pickerAnchor?.setAttribute('aria-expanded','false');
+  if(restoreFocus&&pickerAnchor?.isConnected)pickerAnchor.focus({preventScroll:true});
+  pickerAnchor=null;
+}
+
+function openPicker(anchor,parent){
+  if(!picker.hidden&&pickerAnchor===anchor){closePicker(true);return;}
+  closePicker();
+  pickerAnchor=anchor;
+  picker.replaceChildren();
+  for(const branch of experiment.branches.filter(item=>item.parent===parent)){
+    const button=document.createElement('button');
+    button.type='button';button.className='branch-choice';
+    button.dataset.route=branch.id;
+    const name=document.createElement('span');name.textContent=branch.name;
+    const state=document.createElement('small');state.textContent=route===branch.id?branchText.current:branchText.exploring;
+    button.append(name,state);
+    if(route===branch.id)button.setAttribute('aria-current','true');
+    button.onclick=()=>navigate(branch.id);
+    picker.append(button);
+  }
+  anchor.setAttribute('aria-expanded','true');
+  picker.hidden=false;
+  const rect=anchor.getBoundingClientRect();
+  const width=picker.offsetWidth,height=picker.offsetHeight;
+  picker.style.left=Math.max(16,Math.min(window.innerWidth-width-16,rect.left+rect.width/2-width/2))+'px';
+  const preferredTop=rect.bottom+8;
+  picker.style.top=Math.max(16,preferredTop+height<window.innerHeight-16?preferredTop:rect.top-height-8)+'px';
+  (picker.querySelector('[aria-current]')||picker.querySelector('button'))?.focus({preventScroll:true});
+}
+
+function chooserButton(label,parent,className){
+  const button=document.createElement('button');button.type='button';
+  button.className=className;
+  const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  icon.setAttribute('viewBox','0 0 16 16');icon.setAttribute('aria-hidden','true');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M4 3v10M4 9c0-4 8-2 8-6M2 3h4M2 13h4M10 3h4');icon.append(path);
+  const name=document.createElement('span');name.textContent=label;
+  const chevron=document.createElement('span');chevron.className='branch-chevron';chevron.textContent='⌄';chevron.setAttribute('aria-hidden','true');
+  button.append(icon,name,chevron);
+  button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded','false');
+  button.setAttribute('aria-controls','branch-picker');
+  button.onclick=()=>openPicker(button,parent);
+  return button;
+}
+
+function renderBranchChrome(){
+  closePicker();routePath.replaceChildren();routePath.hidden=route==='main';
+  if(route==='main'){
+    for(const parent of new Set(experiment.branches.map(branch=>branch.parent))){
+      const stage=[...axis.children].find(li=>li.querySelector(':scope > .node')?.dataset.stage===parent);
+      if(!stage)continue;
+      const count=experiment.branches.filter(branch=>branch.parent===parent).length;
+      const button=chooserButton(branchText.count(count),parent,'branch-access');
+      button.setAttribute('aria-label',branchText.open(parent,count));
+      stage.append(button);
+    }
+    return;
+  }
+  const branch=branchById(route);
+  const home=document.createElement('button');home.type='button';home.className='route-home';
+  home.textContent=branchText.home;home.setAttribute('aria-label',branchText.return);home.onclick=()=>navigate('main');
+  const separator=document.createElement('span');separator.className='route-separator';separator.textContent='›';separator.setAttribute('aria-hidden','true');
+  const parent=document.createElement('span');parent.textContent=branch.parent;
+  const next=separator.cloneNode(true);
+  const choices=chooserButton(branchText.route(branch.name),branch.parent,'route-switch');
+  choices.setAttribute('aria-label',branchText.switch(branch.name));
+  routePath.append(home,separator,parent,next,choices);
+}
+
+function showRoute(id,moveFocus=false){
+  routeViews.set(route,{selected,expanded});
+  route=validRoute(id);
+  const view=routeViews.get(route);
+  selected=view?.selected??null;expanded=view?.expanded??null;
+  const branch=branchById(route);
+  const state=branch?{...branch,task_id:experiment.project.task_id}:experiment.project;
+  render(state,true);axis.dataset.stale='false';
+  if(moveFocus){
+    const target=branch?routePath.querySelector('.route-switch'):axis.querySelector('.branch-access');
+    target?.focus({preventScroll:true});
+  }
+}
+
+function navigate(id){
+  const next=validRoute(id);
+  if(next===route){closePicker(true);return;}
+  history.pushState(null,'',location.pathname+location.search+(next==='main'?'':'#'+next));
+  showRoute(next,true);
+}
+
+document.addEventListener('pointerdown',event=>{
+  if(!picker.hidden&&!picker.contains(event.target)&&!pickerAnchor?.contains(event.target))closePicker();
+});
+document.addEventListener('keydown',event=>{
+  if(picker.hidden)return;
+  if(event.key==='Escape'){event.preventDefault();closePicker(true);return;}
+  const buttons=[...picker.querySelectorAll('button')];
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+    event.preventDefault();
+    const offset=event.key==='ArrowDown'?1:-1;
+    buttons[(buttons.indexOf(document.activeElement)+offset+buttons.length)%buttons.length]?.focus();
+  }
+});
+document.addEventListener('focusin',event=>{
+  if(!picker.hidden&&!picker.contains(event.target)&&event.target!==pickerAnchor)closePicker();
+});
+window.addEventListener('resize',()=>closePicker());
+window.addEventListener('scroll',()=>closePicker(),{passive:true});
+window.addEventListener('popstate',()=>showRoute(routeFromUrl()));
+showRoute(routeFromUrl());
+
+</script>
+</body>
+</html>

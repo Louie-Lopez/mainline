@@ -1,0 +1,232 @@
+{
+  "zh": {
+    "project": {
+      "task_id": "personal-assistant-branch-experiment",
+      "mainline": "打造自己的 AI 私人助理，让日程、资料和待办事项在日常生活中衔接起来。",
+      "stages": [
+        "明确需求",
+        "整理资料",
+        "打通任务",
+        "真实试用",
+        "稳定使用"
+      ],
+      "stage_statuses": [
+        "done",
+        "done",
+        "active",
+        "active",
+        "pending"
+      ],
+      "stage_mainlines": {
+        "明确需求": "找出日常最需要帮助的事情，确定首版助理的能力范围。",
+        "整理资料": "整理必要的个人资料和偏好，明确可访问的信息范围。",
+        "打通任务": "让助理能够协助安排日程、查找资料和跟进事项。",
+        "真实试用": "把已完成的能力放进日常生活，检验是否省心可靠。",
+        "稳定使用": "解决试用中的关键问题，形成可以持续使用的个人助理。"
+      },
+      "substages": {
+        "打通任务": {
+          "stages": [
+            "日程安排",
+            "资料查找",
+            "事项跟进"
+          ],
+          "stage_statuses": [
+            "done",
+            "active",
+            "pending"
+          ],
+          "stage_mainlines": {
+            "日程安排": "整理时间安排，及时发现冲突和需要确认的事项。",
+            "资料查找": "从自己的资料中找到答案，并能回到原文核对。",
+            "事项跟进": "把约定和待办接续起来，清楚知道下一步要做什么。"
+          },
+          "stage_details": {
+            "资料查找": "支持按问题查找笔记与文档，回答时附上对应出处。"
+          }
+        }
+      },
+      "stage_labels": {
+        "打通任务": "探索方案",
+        "真实试用": "试用已有能力"
+      }
+    },
+    "branches": [
+      {
+        "id": "cloud",
+        "name": "云端接入",
+        "parent": "打通任务",
+        "mainline": "接入已有云端服务，让日程、资料和待办尽快协同起来。",
+        "stages": [
+          "连接服务",
+          "串起任务",
+          "核对权限",
+          "日常试用"
+        ],
+        "stage_statuses": [
+          "done",
+          "active",
+          "pending",
+          "pending"
+        ],
+        "stage_labels": {
+          "串起任务": "接通日程"
+        },
+        "stage_mainlines": {
+          "连接服务": "连接已有日历、笔记和待办服务。",
+          "串起任务": "让会议安排、相关资料和后续待办衔接起来。",
+          "核对权限": "确认每项服务能访问什么，重要操作由本人确认。",
+          "日常试用": "用真实日程检验服务连接是否稳定、是否省心。"
+        },
+        "stage_details": {
+          "串起任务": "先从日历读取会议，再找出相关资料，最后生成会后待办。"
+        }
+      },
+      {
+        "id": "local",
+        "name": "本地运行",
+        "parent": "打通任务",
+        "mainline": "让助理在本机处理个人资料，并能在离线时完成常用任务。",
+        "stages": [
+          "整理本地资料",
+          "本地检索",
+          "离线任务",
+          "日常试用"
+        ],
+        "stage_statuses": [
+          "done",
+          "active",
+          "pending",
+          "pending"
+        ],
+        "stage_labels": {
+          "本地检索": "修复引用"
+        },
+        "stage_mainlines": {
+          "整理本地资料": "整理可供助理使用的本地笔记和文档。",
+          "本地检索": "从本地资料找到答案，并准确指向原文。",
+          "离线任务": "在断网时完成资料查询和待办整理。",
+          "日常试用": "确认本地助理在常用设备上足够快、足够可靠。"
+        },
+        "stage_details": {
+          "本地检索": "已经能找到相关文档，正在修复回答引用跳错段落的问题。"
+        }
+      }
+    ]
+  },
+  "en": {
+    "project": {
+      "task_id": "personal-assistant-branch-experiment",
+      "mainline": "Build a personal AI assistant that connects your calendar, knowledge, and everyday tasks.",
+      "stages": [
+        "Define needs",
+        "Gather context",
+        "Connect tasks",
+        "Try it daily",
+        "Keep it useful"
+      ],
+      "stage_statuses": [
+        "done",
+        "done",
+        "active",
+        "active",
+        "pending"
+      ],
+      "stage_labels": {
+        "Connect tasks": "Exploring",
+        "Try it daily": "Trying it"
+      },
+      "stage_mainlines": {
+        "Define needs": "Choose the everyday tasks where an assistant would help most.",
+        "Gather context": "Organize personal information and decide what the assistant may access.",
+        "Connect tasks": "Help with scheduling, finding information, and following up.",
+        "Try it daily": "Use the working parts in daily life and see whether they save effort.",
+        "Keep it useful": "Resolve the problems that matter and make the assistant reliable over time."
+      },
+      "substages": {
+        "Connect tasks": {
+          "stages": [
+            "Scheduling",
+            "Find answers",
+            "Follow up"
+          ],
+          "stage_statuses": [
+            "done",
+            "active",
+            "pending"
+          ],
+          "stage_mainlines": {
+            "Scheduling": "Keep plans organized and flag conflicts that need attention.",
+            "Find answers": "Find answers in personal documents and link back to the original source.",
+            "Follow up": "Connect commitments and tasks so the next step is clear."
+          },
+          "stage_details": {
+            "Find answers": "Search notes and documents by question, with sources attached to each answer."
+          }
+        }
+      }
+    },
+    "branches": [
+      {
+        "id": "cloud",
+        "name": "Cloud services",
+        "parent": "Connect tasks",
+        "mainline": "Connect existing cloud services to bring calendars, documents, and tasks together quickly.",
+        "stages": [
+          "Connect services",
+          "Link tasks",
+          "Check access",
+          "Try it daily"
+        ],
+        "stage_statuses": [
+          "done",
+          "active",
+          "pending",
+          "pending"
+        ],
+        "stage_labels": {
+          "Link tasks": "Calendar"
+        },
+        "stage_mainlines": {
+          "Connect services": "Connect existing calendar, notes, and task services.",
+          "Link tasks": "Connect meetings with relevant documents and follow-up tasks.",
+          "Check access": "Check what each service can access and require approval for important actions.",
+          "Try it daily": "Use real plans to check whether service connections are reliable and useful."
+        },
+        "stage_details": {
+          "Link tasks": "Read a meeting from the calendar, find relevant documents, then draft follow-up tasks."
+        }
+      },
+      {
+        "id": "local",
+        "name": "Local processing",
+        "parent": "Connect tasks",
+        "mainline": "Keep personal information on your device and make everyday tasks work offline.",
+        "stages": [
+          "Organize files",
+          "Local search",
+          "Offline tasks",
+          "Try it daily"
+        ],
+        "stage_statuses": [
+          "done",
+          "active",
+          "pending",
+          "pending"
+        ],
+        "stage_labels": {
+          "Local search": "Fixing links"
+        },
+        "stage_mainlines": {
+          "Organize files": "Organize the local notes and documents available to the assistant.",
+          "Local search": "Find answers in local documents and point to the right source passage.",
+          "Offline tasks": "Find information and organize tasks without an internet connection.",
+          "Try it daily": "Check that the local assistant is fast and reliable on everyday devices."
+        },
+        "stage_details": {
+          "Local search": "Relevant documents can already be found. Fixing source links that open the wrong passage."
+        }
+      }
+    ]
+  }
+}
