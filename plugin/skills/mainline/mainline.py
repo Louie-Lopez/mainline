@@ -1,12 +1,16 @@
 """A task state file and a read-only local card. Python standard library only."""
 
 import argparse
+import base64
+from contextlib import contextmanager
+import errno
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
 import re
+import socket
 from socketserver import TCPServer
 import subprocess
 import sys
@@ -619,7 +623,11 @@ def make_server(state_path, port=0):
         do_PATCH = do_POST
 
     class LocalServer(ThreadingHTTPServer):
+        allow_reuse_address = os.name != "nt"
+
         def server_bind(self):
+            if os.name == "nt":
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
             # The loopback address needs no reverse DNS, which can delay startup.
             TCPServer.server_bind(self)
             self.server_name, self.server_port = self.server_address
@@ -631,9 +639,37 @@ def make_server(state_path, port=0):
     return server
 
 
+def recorded_runtime(state_path):
+    """Read only a local runtime record belonging to this exact state file."""
+    try:
+        runtime = json.loads(runtime_path(state_path).read_text(encoding="utf-8"))
+        if runtime.get("state_path") != str(state_path):
+            return None
+        url = urlsplit(runtime["url"])
+        if (url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port
+                or url.username or url.password or url.path not in ("", "/")
+                or url.query or url.fragment):
+            return None
+        return runtime
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+def resume_server(state_path, port=0):
+    previous = recorded_runtime(state_path)
+    preferred = port or (urlsplit(previous["url"]).port if previous else 0)
+    try:
+        return make_server(state_path, preferred)
+    except OSError as exc:
+        # A requested port remains strict; only an unavailable remembered port falls back.
+        if port or not preferred or exc.errno not in (errno.EADDRINUSE, errno.EACCES, 10048, 10013):
+            raise
+        return make_server(state_path, 0)
+
+
 def serve(state_path, port=0):
     state_path = absolute_path(state_path)
-    server = make_server(state_path, port)
+    server = resume_server(state_path, port)
     runtime = {"pid": os.getpid(), "url": f"http://127.0.0.1:{server.server_port}",
                "state_path": str(state_path)}
     atomic_json(runtime_path(state_path), runtime)
@@ -646,15 +682,8 @@ def serve(state_path, port=0):
 
 def discover(state_path, task_id):
     try:
-        runtime = json.loads(runtime_path(state_path).read_text(encoding="utf-8"))
-        if runtime.get("state_path") != str(state_path):
-            return None
-        # Never probe an arbitrary address from a modified runtime file.
-        from urllib.parse import urlsplit
-        url = urlsplit(runtime["url"])
-        if (url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port
-                or url.username or url.password or url.path not in ("", "/")
-                or url.query or url.fragment):
+        runtime = recorded_runtime(state_path)
+        if runtime is None:
             return None
         with LOCAL_HTTP.open(runtime["url"].rstrip("/") + "/health", timeout=0.3) as response:
             health = json.load(response)
@@ -665,7 +694,46 @@ def discover(state_path, task_id):
     return None
 
 
+@contextmanager
+def startup_lock(state_path):
+    # OS locks are released even if the launcher exits unexpectedly.
+    with Path(state_path).with_suffix(".start.lock").open("a+b") as lock:
+        if lock.tell() == 0:
+            lock.write(b"0")
+            lock.flush()
+        deadline = time.monotonic() + 6
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    lock.seek(0)
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("Another Mainline launch is still in progress")
+                time.sleep(0.05)
+        try:
+            yield
+        finally:
+            if os.name == "nt":
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
 def start(state_path, port=0):
+    state_path = absolute_path(state_path)
+    read_state(state_path)
+    with startup_lock(state_path):
+        return start_locked(state_path, port)
+
+
+def start_locked(state_path, port=0):
     state_path = absolute_path(state_path)
     state = read_state(state_path)
     existing = discover(state_path, state["task_id"])
@@ -692,12 +760,121 @@ def start(state_path, port=0):
     raise RuntimeError(f"Server did not become ready within 5 seconds; log: {log_path}")
 
 
+def valid_session_id(identity):
+    return isinstance(identity, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}", identity) is not None
+
+
+def bind_session(state_path, session_id):
+    if not valid_session_id(session_id):
+        raise ValueError("Invalid session ID")
+    state_path = absolute_path(state_path).resolve()
+    state = read_state(state_path)
+    store = next((parent for parent in state_path.parents if parent.name == ".mainline"),
+                 state_path.parent / ".mainline")
+    binding = {"state_path": str(state_path), "task_id": state["task_id"]}
+    destination = store / "sessions" / (session_id + ".json")
+    if destination.exists() and json.loads(destination.read_text(encoding="utf-8")) == binding:
+        return
+    atomic_json(destination, binding)
+
+
+def session_state(event):
+    if not isinstance(event, dict) or (event.get("hook_event_name") != "SessionStart"
+            or event.get("source") not in ("startup", "resume")
+            or event.get("agent_id") or event.get("agent_type")):
+        return None
+    identity, cwd = event.get("session_id"), event.get("cwd")
+    if not valid_session_id(identity) or not isinstance(cwd, str) or not Path(cwd).is_absolute():
+        return None
+    cwd = Path(cwd).resolve()
+    # Exact conversation IDs only. Never pick a project's newest/only state by guesswork.
+    for workspace in (cwd, *cwd.parents):
+        store = workspace / ".mainline"
+        binding = store / "sessions" / (identity + ".json")
+        if binding.is_file():
+            data = json.loads(binding.read_text(encoding="utf-8"))
+            path = absolute_path(data["state_path"]).resolve()
+            if not path.is_relative_to(workspace) or read_state(path)["task_id"] != data["task_id"]:
+                return None
+            return path
+        # Existing installations commonly use the thread ID as the state directory.
+        path = store / identity / "state.json"
+        if path.is_file():
+            path = path.resolve()
+            if not path.is_relative_to(workspace) or read_state(path)["task_id"] != identity:
+                return None
+            return path
+    return None
+
+
+def recover_session(event):
+    state_path = session_state(event)
+    if state_path is None:
+        return None
+    result = start(state_path)
+    return {"hookSpecificOutput": {
+        "hookEventName": "SessionStart",
+        "additionalContext": (
+            "Mainline auto-restore is enabled for this conversation. Its saved project is ready at "
+            + result["url"]
+            + ". At the next turn, use open_in_codex once with this browser URL in the bottom panel. "
+            "Only restore the view; do not read, summarize, or change project progress for this. "
+            "Do not reopen on routine later turns."
+        ),
+    }}
+
+
+def install_recovery_hook(codex_home=None):
+    """Register the installed plugin's recovery command in Codex's supported user hooks."""
+    root = absolute_path(codex_home or os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+    path = root / "hooks.json"
+    raw = path.read_bytes() if path.exists() else None
+    data = json.loads(raw.decode("utf-8-sig")) if raw is not None else {}
+    if not isinstance(data, dict) or not isinstance(data.get("hooks", {}), dict):
+        raise ValueError("Existing hooks.json must contain a hooks object")
+    code = "import runpy;runpy.run_path(" + repr(str(Path(__file__).resolve())) + ",run_name='__main__')"
+    encoded = base64.b64encode(code.encode("utf-8")).decode("ascii")
+    runner = ' -c "import base64;exec(base64.b64decode(\'' + encoded + '\'))" recover'
+    handler = {"type": "command", "command": "python3" + runner,
+               "commandWindows": "python" + runner, "timeout": 15,
+               "statusMessage": "Restore Mainline", "additionalContextLimit": 300}
+    group = {"matcher": "^(startup|resume)$", "hooks": [handler]}
+    groups = data.setdefault("hooks", {}).setdefault("SessionStart", [])
+    if not isinstance(groups, list) or any(not isinstance(value, dict) for value in groups):
+        raise ValueError("Existing SessionStart hooks must be a list of groups")
+    # Replace only our previous registration; keep every unrelated hook and its order.
+    found = next((i for i, value in enumerate(groups)
+                  if len(value.get("hooks", [])) == 1
+                  and value["hooks"][0].get("statusMessage") == "Restore Mainline"
+                  and "base64.b64decode" in value["hooks"][0].get("command", "")
+                  and value["hooks"][0]["command"].endswith(' recover')), None)
+    if found is not None and groups[found] == group:
+        return {"hooks_file": str(path), "changed": False, "review": "Use /hooks to check trust"}
+    if found is None:
+        groups.append(group)
+    else:
+        groups[found] = group
+    root.mkdir(parents=True, exist_ok=True)
+    if raw is not None:
+        backup = path.with_name("hooks.mainline-backup-" + uuid.uuid4().hex[:8] + ".json")
+        backup.write_bytes(raw)
+    newline = "\r\n" if raw and b"\r\n" in raw else "\n"
+    text = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").replace("\n", newline)
+    payload = text.encode("utf-8-sig" if raw and raw.startswith(b"\xef\xbb\xbf") else "utf-8")
+    temporary = path.with_name(".hooks-" + uuid.uuid4().hex + ".tmp")
+    temporary.write_bytes(payload)
+    os.replace(temporary, path)
+    return {"hooks_file": str(path), "changed": True, "review": "Trust Restore Mainline in /hooks"}
+
+
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("recover", help="Handle a trusted SessionStart hook on stdin")
+    commands.add_parser("install-hook", help="Register automatic recovery; user trust is still required").add_argument("--codex-home")
     for command in ("init", "position", "status", "subdivide", "finish", "describe", "replan", "read", "branch", "serve", "start"):
         sub = commands.add_parser(command)
         sub.add_argument("--state", required=True)
@@ -717,6 +894,8 @@ def main():
             visibility.add_argument("--restore", action="store_true")
         if command in ("serve", "start"):
             sub.add_argument("--port", type=int, default=0)
+        if command == "start":
+            sub.add_argument("--session-id", help="Bind this conversation to the saved project")
         if command == "init":
             sub.add_argument("--task-id", required=True)
         if command in ("init", "describe"):
@@ -738,7 +917,18 @@ def main():
         if command in ("replan", "subdivide"):
             sub.add_argument("--reason", required=command == "replan")
     args = parser.parse_args()
+    if args.command == "recover":
+        try:
+            result = recover_session(json.load(sys.stdin))
+            if result is not None:
+                print(json.dumps(result, ensure_ascii=False))
+        except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
+            print("Mainline recovery skipped: " + str(exc), file=sys.stderr)
+        return 0  # Recovery must not block a conversation or rewrite progress.
     try:
+        if args.command == "install-hook":
+            print(json.dumps(install_recovery_hook(args.codex_home), ensure_ascii=False))
+            return 0
         path = absolute_path(args.state)
         if args.command == "init":
             result = init_state(path, args.task_id, args.stage, args.current, args.mainline)
@@ -768,6 +958,9 @@ def main():
             serve(path, args.port)
             return 0
         else:
+            identity = args.session_id or os.environ.get("CODEX_THREAD_ID")
+            if identity:
+                bind_session(path, identity)
             result = start(path, args.port)
         branch = args.id if args.command == "branch" else getattr(args, "branch", None)
         if branch is not None:

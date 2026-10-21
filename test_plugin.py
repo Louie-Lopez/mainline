@@ -66,7 +66,7 @@ def check(browser=False):
 
     try:
         send({"id": 1, "method": "initialize", "params": {
-            "clientInfo": {"name": "mainline-test", "version": "0.1.0"}}})
+            "clientInfo": {"name": "mainline-test", "version": "0.1.0"}, "capabilities": {"experimentalApi": True}}})
         response(1)
         send({"method": "initialized"})
         send({"id": 2, "method": "skills/list", "params": {
@@ -82,6 +82,14 @@ def check(browser=False):
                        for entry in data["data"] for skill in entry["skills"])
         for name, source_file in SOURCES.items():
             assert (installed / name).read_bytes() == source_file.read_bytes()
+        subprocess.run([sys.executable, str(installed / "mainline.py"), "install-hook", "--codex-home", str(profile)],
+                       cwd=source, env=env, check=True, capture_output=True, timeout=10)
+        send({"id": 3, "method": "hooks/list", "params": {"cwds": [str(source)]}})
+        hook_data = response(3)
+        hooks = [hook for entry in hook_data["data"] for hook in entry["hooks"]
+                 if hook.get("statusMessage") == "Restore Mainline"]
+        assert len(hooks) == 1 and hooks[0]["enabled"], hook_data
+        assert hooks[0]["trustStatus"] == "untrusted", hooks
         runtime = check_runtime(installed, run)
         browsers = []
         if browser:
@@ -95,7 +103,7 @@ def check(browser=False):
                 browsers.append({"suite": suite, "result": json.loads(result.stdout)})
         report = {"passed": True, "skill": found[0]["name"], "installed": str(installed),
                   "archive": str(archive), "fixture": str(run),
-                  "runtime": runtime, "browser_suites": browsers}
+                  "runtime": runtime, "hooks": hooks, "browser_suites": browsers}
         (run / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2)
                                          + "\n", encoding="utf-8")
         print(json.dumps(report, indent=2))

@@ -42,7 +42,7 @@ def check_runtime(skill_dir, run):
     cli("status", "--parent", "Build", "--active", "View", "--label", "修复错误")
     cli("describe", "--parent", "Build", "--stage", "View",
         "--mainline", "Make the current stage clear.", "--details", "Show parallel work.")
-    first = cli("start")  # The launcher exits; its detached server must survive.
+    first = cli("start", "--session-id", "package-chat")  # The launcher exits; its detached server must survive.
     health = {"task_id": task_id, "state_path": str(state)}
     try:
         assert first["reused"] is False
@@ -51,6 +51,21 @@ def check_runtime(skill_dir, run):
             assert get("/" + query) == script.with_name("card.html").read_bytes()
         second = cli("start")
         assert second["reused"] is True and second["pid"] == first["pid"]
+        hook_home = run / "hook-profile"
+        subprocess.run([sys.executable, str(script), "install-hook", "--codex-home", str(hook_home.resolve())],
+                       check=True, capture_output=True, timeout=10)
+        hook = json.loads((hook_home / "hooks.json").read_text(encoding="utf-8"))["hooks"]["SessionStart"][0]["hooks"][0]
+        command = hook["commandWindows"] if os.name == "nt" else hook["command"]
+        event = {"hook_event_name": "SessionStart", "source": "resume",
+                 "session_id": "package-chat", "cwd": str(state.parent)}
+        original = state.read_bytes()
+        recovered = subprocess.run(command, shell=True, input=json.dumps(event),
+                                   cwd=state.parent, env=os.environ.copy(),
+                                   capture_output=True, text=True, encoding="utf-8", timeout=15)
+        assert recovered.returncode == 0, recovered.stderr
+        assert first["url"] in json.loads(recovered.stdout)["hookSpecificOutput"]["additionalContext"]
+        assert state.read_bytes() == original
+        assert cli("start")["pid"] == first["pid"]
         saved = cli("read")
         assert saved["stages"] == names
         assert saved["stage_statuses"] == ["done", "active", "active", "pending"]
@@ -80,7 +95,7 @@ def check_runtime(skill_dir, run):
                        "verified server reuse", "packaged HTML in both languages",
                        "parallel stages", "substage labels and goals", "live HTTP updates",
                        "completion preserves lifecycle", "branch progress isolation and compact reads",
-                       "archive and restore preserve branch progress"],
+                       "archive and restore preserve branch progress", "registered hook command and session binding"],
         }
         (run / "runtime-report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

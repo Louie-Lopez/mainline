@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '22'
       - name: State and service tests
-        run: python -m unittest -q test_mainline test_branches
+        run: python -m unittest -q test_mainline test_branches test_recovery
       - name: Packaged runtime and detached startup
         run: python test_package_runtime.py
       - name: Install browser test dependencies
