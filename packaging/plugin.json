@@ -1,6 +1,6 @@
 {
   "name": "mainline",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "description": "Keep the whole project in view during long AI conversations: one goal, stable stages, and clear current work.",
   "author": {"name": "Louie-Lopez"},
   "homepage": "https://github.com/Louie-Lopez/mainline",

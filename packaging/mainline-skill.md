@@ -7,7 +7,7 @@ description: Show, update, or recover a project's full lifecycle with one goal a
 
 Track the user's agreed project from its original goal to its completion criteria. Keep completed, current, and necessary future stages visible. The latest request belongs inside that lifecycle; it does not replace it. Substages expand their parent's scope. Do not invent future work or expand a deliberately bounded task. Write goals, stage names, labels, and descriptions in the user's language.
 
-The view contains one goal sentence and a stable axis. Multiple stages may be active. Clicking a stage selects its goal and optional description; clicking it again returns to the overview. A parent may expand into substages, with one group open at a time. Wide windows use a horizontal axis; narrow windows use a vertical axis. UI clicks and refreshes do not call a model or write state.
+The view contains one goal sentence and a stable axis. Multiple stages may be active. Clicking a stage selects its goal and optional description; clicking it again returns to the overview. A parent may expand into substages, with one group open at a time. Wide windows use a horizontal axis; narrow windows use a vertical axis. Browsing and refreshes do not call a model or write state. Checking an existing todo writes only that item's completion state.
 
 ## Start or resume
 
@@ -29,7 +29,7 @@ For automatic recovery in Codex, run `python TOOL/mainline.py install-hook` once
 
 ## Update only meaningful changes
 
-One coordinating agent writes each state file. Subagents report findings; the coordinator verifies and records actual progress. Keep known scope and progress in context: do not read, reconcile, or replan on every reply. Read again only when resuming unknown state, resolving a contradiction, or when asked to check. Update only when a stage's state or kind of work meaningfully changes. Small actions and side questions do not add nodes. Never mark work done just to demonstrate progress.
+One coordinating agent maintains lifecycle progress. Subagents report findings; the coordinator verifies and records actual progress. The user can separately check existing todos in the view. Keep known scope and progress in context: do not read, reconcile, or replan on every reply. Read again only when resuming unknown state, resolving a contradiction, or when asked to check. Update only when a stage's state or kind of work meaningfully changes. Small actions and side questions do not add nodes. Never mark work done just to demonstrate progress.
 
 Each stage is independently `pending`, `active`, or `done`; reopening and parallel work are allowed. Prefer `status`, which changes only named stages:
 
@@ -60,12 +60,26 @@ The project goal stays stable when the task changes or the user clicks a stage. 
 
 ```text
 python TOOL/mainline.py describe --state STATE --stage Build --mainline "Turn the agreed design into a working implementation."
-python TOOL/mainline.py describe --state STATE --parent Build --stage View --mainline "Make current work clear at a glance." --details "Show stage status and optional substages. Adapt to the available panel width."
+python TOOL/mainline.py describe --state STATE --parent Build --stage View --mainline "Make current work clear at a glance." --details "Covers stage status, optional substages, and layout at different panel widths."
 ```
 
-A goal explains what a stage achieves, not its current activity label. Missing stage goals fall back to the nearest parent/project goal. Optional `--details` adds a brief description of scope, contents, or outputs; it requires `--stage` and may be updated alone. Missing details stay hidden and never borrow parent text; an empty string clears them. Only the selected stage's details appear. Avoid repeating status or adding descriptions without useful content. Stable scope needs no repeated reads or writes.
+A goal explains what a stage achieves, not its current activity label. Missing stage goals fall back to the nearest parent/project goal. Optional `--details` explains only the stage's scope and contents: what this part of the project covers; it requires `--stage` and may be updated alone. Missing details stay hidden and never borrow parent text; an empty string clears them. Only the selected stage's details appear. Do not include completion criteria, progress reports, next actions, or lists of things to do. Leave details empty when they add nothing useful; do not force headings or a fixed template. Revise details only when their scope or contents change, not with routine progress.
 
-Choose the description's form from its actual logic. Keep a connected explanation as prose; use blank lines between distinct paragraphs. Use `1. ` lines only for ordered steps, `- ` lines for independent items, and two-space indentation only for genuine child points. Mix a short introduction with a list when helpful. The viewer renders these explicit markers; it does not infer structure. Prefer a few short sentences or items. Remove repetition before adding structure; do not force headings, parallel categories, or nested lists onto a simple explanation. Do not turn the description into an activity log. Literal newlines belong in the `--details` argument; HTML and other Markdown are displayed as text.
+Choose the description's form from its actual logic. Keep a connected explanation as prose; use blank lines between distinct paragraphs. Use `1. ` lines only when the content has a genuine sequence, `- ` lines for independent points, and two-space indentation only for genuine child points. Mix a short introduction with a list when helpful. The viewer renders these explicit markers; it does not infer structure. Prefer a few short sentences or items. Remove repetition before adding structure; do not force headings, parallel categories, or nested lists onto a simple explanation. Do not turn the description into an activity log. Literal newlines belong in the `--details` argument; HTML and other Markdown are displayed as text.
+
+## Todos only on the user's explicit request
+
+Never create todos automatically, infer them from next steps, or extract them from stage descriptions. Todos are specific things the user asks to remember, not a breakdown or duplicate of the stage description. Removing actions from a description does not authorize adding them as todos. Add a todo only when the user explicitly asks to record one in the corresponding stage. If that stage is unclear, clarify the destination. New and existing projects have no todos by default. Enabling this feature does not authorize populating any project.
+
+The page starts on the mainline and its description view. The Stage details / To-dos (环节说明 / 待办) switch changes only the area below the axis and keeps that choice while browsing stages. Overview groups todos by stage; a selected parent includes its substages; a selected substage shows its own items. A branch shows only its own todos. Completed items stay recorded under a collapsed section. Checking a todo never completes its stage, and completing a stage never checks its todos. No priority, deadline, reminder, or per-turn reconciliation.
+
+```text
+python TOOL/mainline.py todo --state STATE --stage Validate --add "Verify recovery in another project."
+python TOOL/mainline.py todo --state STATE --stage Validate --done ITEM_ID
+python TOOL/mainline.py todo --state STATE --stage Validate --pending ITEM_ID
+```
+
+Use `--parent STAGE` for a substage, and `--branch ID` for a branch. Use `--ordered` only when the requested items must be done in sequence; otherwise leave them unordered. Repeated `--add` arguments keep the user's requested order. Read the relevant saved items to obtain IDs only when needed. Existing todos are preserved during normal progress updates; replanning cannot silently remove stages or substages that contain them. Only update completion when the user marks it, or the explicitly requested action is actually verified complete. A concurrent edit is rejected instead of overwriting newer progress; reread and reapply only the intended change.
 
 ## Keep distinct routes only when needed
 

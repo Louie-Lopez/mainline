@@ -20,7 +20,7 @@ Mainline is a local project view that you use alongside an AI assistant. You ask
 
 - **Preserves the project view.** Stages cover the agreed project from start to outcome and stay fixed unless its scope materially changes.
 - **Shows current work.** Multiple stages can be active, with short labels such as “Fixing” or “Verifying.”
-- **Reveals detail on demand.** Select a stage for its goal, optional description, and one level of substages. The overview remains small. Descriptions can use short paragraphs, ordered steps, or parallel items, with indentation for genuine child points.
+- **Reveals detail on demand.** Select a stage for its goal, optional description, and one level of substages. The overview remains small. Stage details explain scope and contents, using short paragraphs or lists where helpful.
 - **Resumes across chats.** Reuse the same project's local state file instead of reconstructing progress from every message.
 - **Keeps overhead small.** No model calls for viewing, clicking, or refreshing. The page checks local state every 30 seconds and pauses while hidden; the agent writes only meaningful changes.
 
@@ -36,6 +36,8 @@ The axis shows the order of project stages, rather than time spent. Progress com
 </details>
 
 When different approaches need their own progress, keep them as optional branches under the stage where they diverge. The view opens on the mainline; each branch has its own goal and stages, and never changes mainline progress automatically. Unused routes can be hidden and restored with their progress intact. [Try the branch demo](https://louie-lopez.github.io/mainline/branches.html?lang=en).
+
+The **Stage details / To-dos** switch keeps reminders separate from the description. Todos are added only when you explicitly ask the assistant to record them in a stage; it does not extract them from descriptions. Checking an item saves its completion locally without changing stage progress. The page still opens on the mainline.
 
 ## Where it works
 
@@ -101,12 +103,12 @@ python mainline.py status --state STATE --done Define --active Build --active Va
 python mainline.py start --state STATE
 ```
 
-Open the returned URL. Each project uses a separate state file, with one coordinating writer. See [SKILL.md](plugin/skills/mainline/SKILL.md) for updates, substages, descriptions, and recovery. Keep `.mainline/` out of your own public repositories: it may contain private project details and machine paths. The service binds to `127.0.0.1`, exposes read-only routes, and makes no telemetry or outbound API calls. Local files and access granted to your AI host remain under that host's controls.
+Open the returned URL. Each project uses a separate state file, with one coordinating agent maintaining progress. You can check existing todos in the view. See [SKILL.md](plugin/skills/mainline/SKILL.md) for updates, substages, descriptions, todos, and recovery. Keep `.mainline/` out of your own public repositories: it may contain private project details and machine paths. The service binds to `127.0.0.1`, lets the local page check or uncheck existing todos, and makes no telemetry or outbound API calls. Local files and access granted to your AI host remain under that host's controls.
 
 After changing `mainline.py`, restart its existing server; refreshing the browser is sufficient only for HTML changes. A dimmed axis means the last known view is being retained after a connection or read failure.
 
 ```sh
-python -m unittest -q test_mainline test_branches
+python -m unittest -q test_mainline test_branches test_recovery test_todos
 python test_package_runtime.py
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium

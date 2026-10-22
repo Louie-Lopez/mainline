@@ -12,7 +12,7 @@ main{min-height:100svh;display:flex;flex-direction:column;justify-content:center
 .mainline{margin:0;width:100%;max-width:1000px;text-align:center;font-size:16px;font-weight:500;letter-spacing:.025em;line-height:1.8;color:var(--heading);overflow-wrap:anywhere}.mainline[hidden]{display:none}
 .stage-details{margin:0;width:100%;max-width:680px;font-size:14px;line-height:1.9;color:var(--ink);overflow-wrap:anywhere;text-align:left}.stage-details[hidden]{display:none}
 .stage-details p{margin:0;white-space:pre-line}.stage-details>p+p,.stage-details>p+ul,.stage-details>p+ol,.stage-details>ul+p,.stage-details>ol+p,.stage-details>ul+ol,.stage-details>ol+ul{margin-top:.8em}.stage-details ul,.stage-details ol{margin:0;padding-left:1.6em}.stage-details li{padding-left:.2em;white-space:pre-line}.stage-details li+li{margin-top:.35em}.stage-details li>ul,.stage-details li>ol{margin-top:.35em}.stage-details li::marker{color:var(--accent)}
-.axis[data-stale="true"]~.stage-details{opacity:.4}
+.axis[data-stale="true"]~.content-view .stage-details{opacity:.4}
 .axis{list-style:none;display:flex;width:100%;max-width:1100px;padding:0;margin:0;transition:opacity .15s}
 .axis[data-stale="true"]{opacity:.4}.stage{flex:1;min-width:0;position:relative;display:flex;align-items:center;flex-direction:column;color:var(--ink);text-align:center}
 .stage::after{content:'';position:absolute;height:2px;left:calc(50% + 12px);width:calc(100% - 24px);top:9px;background:var(--line)}.stage:last-child::after{display:none}
@@ -97,13 +97,14 @@ button.branch-access:focus-visible,.route-home:focus-visible,.route-switch:focus
 
 
 
+.content-view{width:100%;max-width:580px}.content-tabs{display:flex;justify-content:center;gap:22px;margin:0 0 22px}.content-tabs button{font:inherit;font-size:13px;color:var(--ink);border:0;border-bottom:1px solid transparent;background:none;padding:6px 1px;cursor:pointer;opacity:.65}.content-tabs button[aria-pressed="true"]{color:var(--heading);border-color:var(--accent);opacity:1}.content-tabs button:focus-visible,.todo-panel summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.todo-panel[hidden],.todo-message[hidden]{display:none}.todo-panel{font-size:14px;line-height:1.7;color:var(--ink)}.todo-group+.todo-group{margin-top:22px}.todo-group h2{font-size:12px;font-weight:500;color:var(--accent);margin:0 0 9px}.todo-list{list-style:none;padding:0;margin:0}.todo-list li+li{margin-top:9px}.todo-item{display:flex;align-items:flex-start;gap:10px;cursor:pointer;overflow-wrap:anywhere}.todo-item input{width:16px;height:16px;flex:none;margin:5px 0 0;accent-color:var(--active);cursor:pointer}.todo-item input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.todo-number{min-width:1.3em;color:var(--accent);font-variant-numeric:tabular-nums}.todo-done{margin-top:22px}.todo-done summary{font-size:12px;cursor:pointer;color:var(--ink);margin-bottom:14px}.todo-done .todo-item span:last-child{text-decoration:line-through;opacity:.65}.todo-empty,.todo-message{font-size:13px;text-align:center;color:var(--ink);margin:0}.todo-message{margin-top:14px}.axis[data-stale="true"]~.content-view .todo-panel{opacity:.5}@media(max-width:520px){.todo-panel{font-size:13px}.content-tabs{margin-bottom:18px}}
 /* The shareable demo keeps the light appearance of the original preview. */
 :root{color-scheme:light}
 
 </style>
 </head>
 <body>
-<main><nav id="route-path" hidden></nav><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><div id="stage-details" class="stage-details" aria-live="polite" hidden></div><div id="branch-picker" role="dialog" hidden></div></main>
+<main><nav id="route-path" hidden></nav><p id="mainline" class="mainline" aria-live="polite" hidden></p><ol id="axis" class="axis" aria-label="项目阶段" data-stale="true"></ol><section class="content-view"><nav class="content-tabs"><button id="view-details" type="button" aria-pressed="true" aria-controls="stage-details"></button><button id="view-todos" type="button" aria-pressed="false" aria-controls="todo-panel"></button></nav><div id="stage-details" class="stage-details" aria-live="polite" hidden></div><div id="todo-panel" class="todo-panel" hidden></div><p id="todo-message" class="todo-message" role="status" hidden></p></section><div id="branch-picker" role="dialog" hidden></div></main>
 <script>
 'use strict';
 const axis=document.getElementById('axis');
@@ -118,6 +119,12 @@ const text=messages[language];
 document.documentElement.lang=language==='zh'?'zh-CN':language;
 axis.setAttribute('aria-label',text.axis);
 let task=null, signature='', stages=[], currentState=null, expanded=null, selected=null;
+let contentView='details',todoBusy=false,todoToken=null;
+const todoText={zh:{details:'环节说明',todos:'待办',empty:'暂无待办',completed:n=>'已完成 · '+n,error:'保存失败，请稍后重试。',conflict:'内容已更新，请检查后再勾选。',saved:'已保存',views:'环节内容'},en:{details:'Stage details',todos:'To-dos',empty:'No to-dos',completed:n=>'Completed · '+n,error:'Could not save. Please try again.',conflict:'The project changed. Review it and try again.',saved:'Saved',views:'Stage content'}}[language];
+const detailsButton=document.getElementById('view-details'),todosButton=document.getElementById('view-todos'),todoPanel=document.getElementById('todo-panel'),todoMessage=document.getElementById('todo-message');
+document.querySelector('.content-tabs').setAttribute('aria-label',todoText.views);
+detailsButton.textContent=todoText.details;todosButton.textContent=todoText.todos;
+for(const [button,view] of [[detailsButton,'details'],[todosButton,'todos']])button.onclick=()=>{contentView=view;todoMessage.hidden=true;if(currentState)renderAxis(currentState,true);};
 const own=(map,key)=>map&&Object.hasOwn(map,key)?map[key]:undefined;
 const stageKey=(parent,name)=>JSON.stringify([parent,name]);
 function layout(){
@@ -150,6 +157,69 @@ function stageTextFor(group,field,singleLine=false){
 }
 const mainlinesFor=group=>stageTextFor(group,'stage_mainlines',true);
 const detailsFor=group=>stageTextFor(group,'stage_details');
+function todosFor(group){
+  const todos=group.stage_todos||{};
+  if(typeof todos!=='object'||Array.isArray(todos))throw Error('Invalid todos');
+  for(const [stage,list] of Object.entries(todos)){
+    if(!group.stages.includes(stage)||!list||typeof list.ordered!=='boolean'||!Array.isArray(list.items)||!list.items.length)throw Error('Invalid todo list');
+    const ids=new Set();
+    for(const item of list.items){if(!item||typeof item.id!=='string'||!/^[a-f0-9]{12}$/.test(item.id)||ids.has(item.id)||typeof item.text!=='string'||!item.text.trim()||typeof item.done!=='boolean')throw Error('Invalid todo');ids.add(item.id);}
+  }
+  return todos;
+}
+function todoGroups(s){
+  const groups=[];
+  const add=(group,stage,parent=null)=>{const list=own(todosFor(group),stage);if(list)groups.push({stage,parent,list,title:parent?parent+' / '+stage:stage});};
+  for(const stage of s.stages){
+    if(!selected||(selected.parent===null&&selected.name===stage))add(s,stage);
+    const children=own(s.substages,stage);
+    if(children)for(const child of children.stages)if(!selected||(selected.parent===null&&selected.name===stage)||(selected.parent===stage&&selected.name===child))add(children,child,stage);
+  }
+  return groups;
+}
+function renderContent(s,detail){
+  const groups=todoGroups(s),count=groups.reduce((n,g)=>n+g.list.items.filter(i=>!i.done).length,0);
+  detailsButton.setAttribute('aria-pressed',String(contentView==='details'));
+  todosButton.setAttribute('aria-pressed',String(contentView==='todos'));
+  todosButton.textContent=todoText.todos+(count?' · '+count:'');
+  renderDetails(contentView==='details'?detail:'');todoPanel.hidden=contentView!=='todos';
+  if(contentView!=='todos')return;
+  const wasOpen=todoPanel.querySelector('details')?.open,fragment=document.createDocumentFragment();
+  const appendGroups=(target,done)=>{
+    for(const g of groups){
+      const items=g.list.items.map((item,index)=>({item,index})).filter(x=>x.item.done===done);if(!items.length)continue;
+      const section=document.createElement('section');section.className='todo-group';
+      if(!selected||groups.length>1){const heading=document.createElement('h2');heading.textContent=g.title;section.append(heading);}
+      const list=document.createElement(g.list.ordered?'ol':'ul');list.className='todo-list';
+      for(const {item,index} of items){
+        const li=document.createElement('li');if(g.list.ordered)li.value=index+1;
+        const label=document.createElement('label');label.className='todo-item';
+        const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=item.done;checkbox.disabled=todoBusy||axis.dataset.stale==='true';checkbox.dataset.todo=item.id;
+        checkbox.onchange=()=>toggleTodo(g,item,checkbox.checked);
+        label.append(checkbox);
+        if(g.list.ordered){const number=document.createElement('span');number.className='todo-number';number.textContent=(index+1)+'.';number.setAttribute('aria-hidden','true');label.append(number);}
+        const value=document.createElement('span');value.textContent=item.text;label.append(value);li.append(label);list.append(li);
+      }
+      section.append(list);target.append(section);
+    }
+  };
+  appendGroups(fragment,false);
+  const completed=groups.reduce((n,g)=>n+g.list.items.filter(i=>i.done).length,0);
+  if(!count&&!completed){const empty=document.createElement('p');empty.className='todo-empty';empty.textContent=todoText.empty;fragment.append(empty);}
+  if(completed){const disclosure=document.createElement('details');disclosure.className='todo-done';disclosure.open=Boolean(wasOpen);const summary=document.createElement('summary');summary.textContent=todoText.completed(completed);disclosure.append(summary);appendGroups(disclosure,true);fragment.append(disclosure);}
+  todoPanel.replaceChildren(fragment);
+}
+async function toggleTodo(group,item,done){
+  if(todoBusy)return;
+  const payload={stage:group.stage,parent:group.parent,branch:route==='main'?null:route,id:item.id,done,revision:projectState.revision};
+  todoBusy=true;todoMessage.hidden=true;todoPanel.querySelectorAll('input').forEach(x=>x.disabled=true);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);
+  try{
+    render(await saveTodo(payload,controller.signal),true);
+    todoMessage.hidden=true;
+  }catch(error){todoMessage.textContent=error.message==='conflict'?todoText.conflict:todoText.error;todoMessage.hidden=false;await refresh();}
+  finally{clearTimeout(timer);todoBusy=false;if(currentState)renderAxis(currentState,true);}
+}
 // Only explicit paragraph/list markers create structure; prose and HTML stay text.
 function renderDetails(value){
   const target=document.getElementById('stage-details');
@@ -200,11 +270,12 @@ function renderAxis(s,force=false){
     labelsFor(group);
     mainlinesFor(group);
     detailsFor(group);
+    todosFor(group);
   }
   const labels=labelsFor(s,statuses);
   const mainlines=mainlinesFor(s);
   const details=detailsFor(s);
-  const next=JSON.stringify([s.mainline,s.stages,statuses,subs,labels,mainlines,details]);
+  const next=JSON.stringify([s.mainline,s.stages,statuses,subs,labels,mainlines,details,todosFor(s)]);
   if(next===signature&&!force)return;
   const focused=document.activeElement?.dataset.key;
   task=s.task_id;currentState=s;
@@ -224,7 +295,7 @@ function renderAxis(s,force=false){
   }
   document.getElementById('mainline').textContent=sentence;
   document.getElementById('mainline').hidden=!sentence;
-  renderDetails(detail);
+  renderContent(s,detail);
   const fragment=document.createDocumentFragment();
   function makeStage(name,status,peers,group,activity,parent=null){
     const statusText=status==='active'?(activity||text.active):text[status];
@@ -235,8 +306,9 @@ function renderAxis(s,force=false){
     const key=stageKey(parent,name),isSelected=Boolean(selected?.name===name&&selected.parent===parent);
     node.dataset.key=key;node.dataset.stage=name;
     node.setAttribute('aria-pressed',String(isSelected));node.setAttribute('aria-label',[name,statusText,text.view].join(text.separator));
-    if(isSelected&&detail)node.setAttribute('aria-describedby','stage-details');
+    if(isSelected&&detail&&contentView==='details')node.setAttribute('aria-describedby','stage-details');
     node.onclick=()=>{
+      todoMessage.hidden=true;
       if(isSelected||(group&&expanded===name)){selected=null;expanded=null;}
       else{selected={parent,name};if(parent===null)expanded=group?name:null;}
       renderAxis(currentState,true);
@@ -287,13 +359,14 @@ function validateBranches(s){
     if(!/^[a-z][a-z0-9-]{0,63}$/.test(id)||id==='main'||!branch||typeof branch!=='object'||Array.isArray(branch)||branch.branches!==undefined)throw Error('Invalid branch');
     for(const field of ['name','parent','mainline'])if(typeof branch[field]!=='string'||!branch[field].trim()||/[\r\n]/.test(branch[field]))throw Error('Invalid branch text');
     if(!s.stages.includes(branch.parent)||!Array.isArray(branch.stages)||!branch.stages.length||branch.stages.some(name=>typeof name!=='string'||!name.trim())||!Array.isArray(branch.stage_statuses)||branch.stage_statuses.length!==branch.stages.length||branch.stage_statuses.some(status=>!['pending','active','done'].includes(status))||(branch.archived!==undefined&&typeof branch.archived!=='boolean'))throw Error('Invalid branch state');
-    labelsFor(branch);mainlinesFor(branch);detailsFor(branch);
+    labelsFor(branch);mainlinesFor(branch);detailsFor(branch);todosFor(branch);
   }
 }
 
 function render(s,force=false){
   if(!s||!Array.isArray(s.stages)||typeof s.task_id!=='string')throw Error('Invalid state');
   if(task&&task!==s.task_id)throw Error('Wrong task');
+  if(projectState&&Number.isInteger(s.revision)&&s.revision<projectState.revision)return;
   validateBranches(s);
   const nextBranches=JSON.stringify(s.branches||{});
   projectState=s;
@@ -423,6 +496,19 @@ window.addEventListener('scroll',()=>closePicker(),{passive:true});
 
 
 const branchSamples={"zh": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "打造自己的 AI 私人助理，让日程、资料和待办事项在日常生活中衔接起来。", "stages": ["明确需求", "整理资料", "打通任务", "真实试用", "稳定使用"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_mainlines": {"明确需求": "找出日常最需要帮助的事情，确定首版助理的能力范围。", "整理资料": "整理必要的个人资料和偏好，明确可访问的信息范围。", "打通任务": "让助理能够协助安排日程、查找资料和跟进事项。", "真实试用": "把已完成的能力放进日常生活，检验是否省心可靠。", "稳定使用": "解决试用中的关键问题，形成可以持续使用的个人助理。"}, "substages": {"打通任务": {"stages": ["日程安排", "资料查找", "事项跟进"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"日程安排": "整理时间安排，及时发现冲突和需要确认的事项。", "资料查找": "从自己的资料中找到答案，并能回到原文核对。", "事项跟进": "把约定和待办接续起来，清楚知道下一步要做什么。"}, "stage_details": {"资料查找": "支持按问题查找笔记与文档，回答时附上对应出处。"}}}, "stage_labels": {"打通任务": "探索方案", "真实试用": "试用已有能力"}}, "branches": [{"id": "cloud", "name": "云端接入", "parent": "打通任务", "mainline": "接入已有云端服务，让日程、资料和待办尽快协同起来。", "stages": ["连接服务", "串起任务", "核对权限", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"串起任务": "接通日程"}, "stage_mainlines": {"连接服务": "连接已有日历、笔记和待办服务。", "串起任务": "让会议安排、相关资料和后续待办衔接起来。", "核对权限": "确认每项服务能访问什么，重要操作由本人确认。", "日常试用": "用真实日程检验服务连接是否稳定、是否省心。"}, "stage_details": {"串起任务": "先从日历读取会议，再找出相关资料，最后生成会后待办。"}}, {"id": "local", "name": "本地运行", "parent": "打通任务", "mainline": "让助理在本机处理个人资料，并能在离线时完成常用任务。", "stages": ["整理本地资料", "本地检索", "离线任务", "日常试用"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"本地检索": "修复引用"}, "stage_mainlines": {"整理本地资料": "整理可供助理使用的本地笔记和文档。", "本地检索": "从本地资料找到答案，并准确指向原文。", "离线任务": "在断网时完成资料查询和待办整理。", "日常试用": "确认本地助理在常用设备上足够快、足够可靠。"}, "stage_details": {"本地检索": "已经能找到相关文档，正在修复回答引用跳错段落的问题。"}}]}, "en": {"project": {"task_id": "personal-assistant-branch-experiment", "mainline": "Build a personal AI assistant that connects your calendar, knowledge, and everyday tasks.", "stages": ["Define needs", "Gather context", "Connect tasks", "Try it daily", "Keep it useful"], "stage_statuses": ["done", "done", "active", "active", "pending"], "stage_labels": {"Connect tasks": "Exploring", "Try it daily": "Trying it"}, "stage_mainlines": {"Define needs": "Choose the everyday tasks where an assistant would help most.", "Gather context": "Organize personal information and decide what the assistant may access.", "Connect tasks": "Help with scheduling, finding information, and following up.", "Try it daily": "Use the working parts in daily life and see whether they save effort.", "Keep it useful": "Resolve the problems that matter and make the assistant reliable over time."}, "substages": {"Connect tasks": {"stages": ["Scheduling", "Find answers", "Follow up"], "stage_statuses": ["done", "active", "pending"], "stage_mainlines": {"Scheduling": "Keep plans organized and flag conflicts that need attention.", "Find answers": "Find answers in personal documents and link back to the original source.", "Follow up": "Connect commitments and tasks so the next step is clear."}, "stage_details": {"Find answers": "Search notes and documents by question, with sources attached to each answer."}}}}, "branches": [{"id": "cloud", "name": "Cloud services", "parent": "Connect tasks", "mainline": "Connect existing cloud services to bring calendars, documents, and tasks together quickly.", "stages": ["Connect services", "Link tasks", "Check access", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Link tasks": "Calendar"}, "stage_mainlines": {"Connect services": "Connect existing calendar, notes, and task services.", "Link tasks": "Connect meetings with relevant documents and follow-up tasks.", "Check access": "Check what each service can access and require approval for important actions.", "Try it daily": "Use real plans to check whether service connections are reliable and useful."}, "stage_details": {"Link tasks": "Read a meeting from the calendar, find relevant documents, then draft follow-up tasks."}}, {"id": "local", "name": "Local processing", "parent": "Connect tasks", "mainline": "Keep personal information on your device and make everyday tasks work offline.", "stages": ["Organize files", "Local search", "Offline tasks", "Try it daily"], "stage_statuses": ["done", "active", "pending", "pending"], "stage_labels": {"Local search": "Fixing links"}, "stage_mainlines": {"Organize files": "Organize the local notes and documents available to the assistant.", "Local search": "Find answers in local documents and point to the right source passage.", "Offline tasks": "Find information and organize tasks without an internet connection.", "Try it daily": "Check that the local assistant is fast and reliable on everyday devices."}, "stage_details": {"Local search": "Relevant documents can already be found. Fixing source links that open the wrong passage."}}]}};
+// Demo interactions affect only this page's fictional state, never a local project.
+async function saveTodo(payload){
+  const state=structuredClone(projectState);
+  let group=payload.branch?state.branches[payload.branch]:state;
+  if(payload.parent)group=group.substages[payload.parent];
+  const item=group.stage_todos[payload.stage].items.find(item=>item.id===payload.id);
+  if(!item)throw Error('save');
+  item.done=payload.done;
+  if(Number.isInteger(state.revision))state.revision++;
+  return state;
+}
+async function refresh(){render(projectState,true);}
+
 const experiment=branchSamples[language];
 document.title=language==='zh'?'Mainline · 支线演示':'Mainline — branch demo';
 const branches=Object.fromEntries(experiment.branches.map(({id,...branch})=>[id,branch]));

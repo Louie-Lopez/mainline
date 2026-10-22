@@ -20,7 +20,7 @@ Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目
 
 - **保留项目全景。** 阶段从已约定的起点覆盖到最终成果，除非项目范围有重大变化，否则保持稳定。
 - **明确当前位置。** 支持多个环节同时活动，可用“修复错误”“验证结果”等短标签表达工作性质。
-- **按需查看细节。** 点击环节切换到它的一句话目标、可选说明与一层子环节，总览不堆积细节。说明可按内容使用短段落、顺序步骤或并列条目，有从属关系时再缩进。
+- **按需查看细节。** 点击环节切换到它的一句话目标、可选说明与一层子环节，总览不堆积细节。环节说明只交代范围和内容，按实际关系使用短段落或列表。
 - **跨对话恢复。** 同项目沿用同一份本地状态，避免每次从聊天记录重建进度。
 - **保持低负担。** 浏览、点击、刷新都不调用模型；页面每 30 秒读取本地状态，隐藏后暂停。AI 只记录有意义的变化。
 
@@ -36,6 +36,8 @@ Mainline 是配合 AI 助手使用的本地项目视图。你让 AI 记录项目
 </details>
 
 需要分别保留不同方案时，可以在对应环节创建支线，独立记录目标与进展。默认仍显示主线，支线不会自动改变主线进度；暂时不用时可以收起，之后恢复，进度仍然保留。[体验支线演示](https://louie-lopez.github.io/mainline/branches.html?lang=zh)。
+
+**「环节说明／待办」切换**让需要记住的事项单独显示。只有你明确要求 AI 在对应环节添加时，才会创建待办，不会自动从说明里拆出任务。勾选只保存该事项的完成状态，不改变环节进度；页面默认仍显示主线。
 
 ## 适合哪些环境？
 
@@ -101,12 +103,12 @@ python mainline.py status --state STATE --done 定义目标 --active 实现 --ac
 python mainline.py start --state STATE
 ```
 
-打开返回的链接即可。每个项目使用独立状态，同一文件由一个协调代理写入。更新、细分、描述和恢复规则见 [SKILL.md](plugin/skills/mainline/SKILL.md)。你自己的公开仓库也应忽略 `.mainline/`，它可能包含私人项目内容和机器路径。服务仅监听 `127.0.0.1`，网页接口只读，无遥测和外部 API 请求；本地文件及 AI 宿主取得的访问权限仍由宿主管理。
+打开返回的链接即可。每个项目使用独立状态，由一个协调代理维护进展，你也可以在页面勾选已有待办。更新、细分、说明、待办和恢复规则见 [SKILL.md](plugin/skills/mainline/SKILL.md)。你自己的公开仓库也应忽略 `.mainline/`，它可能包含私人项目内容和机器路径。服务仅监听 `127.0.0.1`，本地页面可勾选或取消勾选已有待办，无遥测和外部 API 请求；本地文件及 AI 宿主取得的访问权限仍由宿主管理。
 
 更新 `mainline.py` 后需要重启原服务；只改网页时刷新即可。轴变淡表示连接或读取失败，当前保留的是上次成功读取的画面。
 
 ```sh
-python -m unittest -q test_mainline test_branches
+python -m unittest -q test_mainline test_branches test_recovery test_todos
 python test_package_runtime.py
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium

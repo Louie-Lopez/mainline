@@ -29,12 +29,16 @@ jobs:
         with:
           node-version: '22'
       - name: State and service tests
-        run: python -m unittest -q test_mainline test_branches test_recovery
+        run: python -m unittest -q test_mainline test_branches test_recovery test_todos
       - name: Packaged runtime and detached startup
         run: python test_package_runtime.py
       - name: Install browser test dependencies
         run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx playwright install --with-deps chromium
+      - name: Build static demos
+        run: python build_demo.py
+      - name: Offline demo interactions
+        run: node test_demo.cjs
       - name: Packaged view interactions
         run: node test_browser.cjs
       - name: Packaged language and responsive views

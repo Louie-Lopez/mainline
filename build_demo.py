@@ -11,8 +11,9 @@ def build():
     style = card.split("<style>", 1)[1].split("</style>", 1)[0]
     view = card.split("<main>", 1)[1].split("</main>", 1)[0]
     # The static demo keeps rendering and interaction, without the local server poller.
-    renderer = card.split("<script>", 1)[1].split("let refreshTimer=", 1)[0]
-    driver = (ROOT / "demo/demo.js").read_text(encoding="utf-8")
+    renderer = card.split("<script>", 1)[1].split("// Local service transport.", 1)[0]
+    driver = (ROOT / "demo/todos.js").read_text(encoding="utf-8") + "\n"
+    driver += (ROOT / "demo/demo.js").read_text(encoding="utf-8")
     shell = (ROOT / "demo/shell.html").read_text(encoding="utf-8")
     for marker, value in (("STYLE", style), ("VIEW", view), ("SCRIPT", renderer + driver)):
         shell = shell.replace("{{" + marker + "}}", value)

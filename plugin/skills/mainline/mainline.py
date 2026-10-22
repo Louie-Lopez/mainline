@@ -1,6 +1,7 @@
-"""A task state file and a read-only local card. Python standard library only."""
+"""A project axis with optional explicit todos. Python standard library only."""
 
 import argparse
+import copy
 import base64
 from contextlib import contextmanager
 import errno
@@ -10,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import socket
 from socketserver import TCPServer
 import subprocess
@@ -59,7 +61,7 @@ def validate_state(state):
     if is_legacy(state):
         raise ValueError("Legacy state: explicitly migrate with replan --stage ... --current ... --reason ...")
     if not isinstance(state, dict) or not (
-            set(state) - {"mainline", "substages", "stage_labels", "stage_mainlines", "stage_details", "branches"} == STATE_FIELDS
+            set(state) - {"mainline", "substages", "stage_labels", "stage_mainlines", "stage_details", "stage_todos", "branches"} == STATE_FIELDS
             or set(state) - {"mainline"} == POINTER_FIELDS):
         raise ValueError("Missing or unknown state fields")
     nonempty(state["task_id"], "task_id")
@@ -88,13 +90,14 @@ def validate_state(state):
     validate_labels(state)
     validate_stage_mainlines(state)
     validate_stage_details(state)
+    validate_todos(state)
     substages = state.get("substages", {})
     if not isinstance(substages, dict):
         raise ValueError("substages must map parent stages to child groups")
     for parent, group in substages.items():
         if parent not in state["stages"]:
             raise ValueError(f"Unknown parent stage: {parent}")
-        if not isinstance(group, dict) or set(group) - {"stage_labels", "stage_mainlines", "stage_details"} != {"stages", "stage_statuses"}:
+        if not isinstance(group, dict) or set(group) - {"stage_labels", "stage_mainlines", "stage_details", "stage_todos"} != {"stages", "stage_statuses"}:
             raise ValueError("Substages allow only stages, statuses, labels, goals, and details; maximum two levels")
         if normalize_stages(group["stages"]) != group["stages"]:
             raise ValueError("Substage names must not have surrounding whitespace")
@@ -107,6 +110,7 @@ def validate_state(state):
         validate_labels(group)
         validate_stage_mainlines(group)
         validate_stage_details(group)
+        validate_todos(group)
         if state.get("stage_labels", {}).get(parent) != aggregate_label(group):
             raise ValueError(f"The label for parent stage {parent} must be derived from active substages")
     if type(state["revision"]) is not int or state["revision"] < 1:
@@ -118,7 +122,7 @@ def validate_state(state):
     for identity, branch in branches.items():
         validate_branch_id(identity)
         required = {"name", "parent", "mainline", "stages", "stage_statuses"}
-        optional = {"substages", "stage_labels", "stage_mainlines", "stage_details", "archived"}
+        optional = {"substages", "stage_labels", "stage_mainlines", "stage_details", "stage_todos", "archived"}
         if not isinstance(branch, dict) or set(branch) - optional != required:
             raise ValueError("Branches require a name, parent, goal, and stages; nested branches are not supported")
         for field in ("name", "parent", "mainline"):
@@ -137,6 +141,77 @@ def validate_state(state):
 def validate_branch_id(identity):
     if not isinstance(identity, str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", identity) or identity == "main":
         raise ValueError("Branch ID must start with a lowercase letter, use letters/digits/hyphens, and be at most 64 characters; main is reserved")
+
+
+class StateConflict(ValueError):
+    pass
+
+
+def validate_todos(group):
+    todos = group.get("stage_todos", {})
+    if not isinstance(todos, dict):
+        raise ValueError("stage_todos must map stages to todo lists")
+    for stage, listing in todos.items():
+        if (stage not in group["stages"] or not isinstance(listing, dict)
+                or set(listing) != {"ordered", "items"} or type(listing["ordered"]) is not bool
+                or not isinstance(listing["items"], list) or not listing["items"]):
+            raise ValueError("Todos require an existing stage, ordered flag, and nonempty items")
+        ids = set()
+        for item in listing["items"]:
+            if (not isinstance(item, dict) or set(item) != {"id", "text", "done"}
+                    or not isinstance(item["id"], str) or not re.fullmatch(r"[a-f0-9]{12}", item["id"])
+                    or item["id"] in ids or type(item["done"]) is not bool
+                    or not isinstance(item["text"], str) or not item["text"].strip()
+                    or len(item["text"]) > 500 or len(item["text"].splitlines()) != 1):
+                raise ValueError("Invalid todo item")
+            ids.add(item["id"])
+
+
+def todo_state(path, stage, *, parent=None, branch=None, add=None, done=None, pending=None,
+               ordered=None, revision=None, task_id=None):
+    root, old = read_scope(path, branch)
+    if task_id is not None and root["task_id"] != task_id:
+        raise StateConflict("Project identity changed")
+    if revision is not None and (type(revision) is not int or root["revision"] != revision):
+        raise StateConflict("State changed; refresh before updating the todo")
+    updated = copy.deepcopy(old)
+    group = updated
+    if parent is not None:
+        if parent not in updated.get("substages", {}):
+            raise ValueError("Unknown substage parent")
+        group = updated["substages"][parent]
+    stage = group["stages"][stage_index(group["stages"], stage)]
+    listing = group.get("stage_todos", {}).get(stage, {"ordered": False, "items": []})
+    if not add and not done and not pending and ordered is None:
+        raise ValueError("Specify a todo addition, completion, reopening, or list order")
+    changes = {}
+    for ids, value in ((done or [], True), (pending or [], False)):
+        for identity in ids:
+            if identity in changes or not any(item["id"] == identity for item in listing["items"]):
+                raise ValueError("Unknown or conflicting todo ID")
+            changes[identity] = value
+    for item in listing["items"]:
+        if item["id"] in changes:
+            item["done"] = changes[item["id"]]
+    for text in add or []:
+        nonempty(text, "todo text")
+        listing["items"].append({"id": uuid.uuid4().hex[:12], "text": text.strip(), "done": False})
+    if ordered is not None:
+        listing["ordered"] = ordered
+    group.setdefault("stage_todos", {})[stage] = listing
+    validate_todos(group)
+    return commit_scope(path, root, updated, branch)
+
+
+def preserve_todos(old, updated):
+    """Never discard user reminders when rearranging stages."""
+    if any(name not in updated["stages"] for name in old.get("stage_todos", {})):
+        raise ValueError("Cannot remove a stage containing todos; retain that stage")
+    if old.get("stage_todos"):
+        updated["stage_todos"] = old["stage_todos"]
+    for group in old.get("substages", {}).values():
+        if group.get("stage_todos"):
+            raise ValueError("Cannot clear substages containing todos; retain the existing subdivision")
 
 
 def read_scope(path, branch=None, *, writing=True):
@@ -161,7 +236,10 @@ def commit_scope(path, root, route, branch=None):
 
 
 def overview_state(state):
-    overview = {key: value for key, value in state.items() if key != "branches"}
+    overview = {key: value for key, value in state.items() if key not in {"branches", "stage_todos"}}
+    if state.get("substages"):
+        overview["substages"] = {name: {key: value for key, value in group.items() if key != "stage_todos"}
+                                 for name, group in state["substages"].items()}
     if state.get("branches"):
         overview["branch_index"] = {
             identity: {key: route[key] for key in ("name", "parent", "archived") if key in route}
@@ -325,8 +403,8 @@ def atomic_json(path, data, create=False):
         stream.write("\n")
         stream.flush()
         os.fsync(stream.fileno())
-    # The main agent is the sole writer. Windows rename additionally refuses
-    # replacement on initial creation, including a concurrent creation race.
+    # Updates compare state under a lock; Windows rename also refuses replacing
+    # an existing file on initial creation, including a concurrent creation race.
     if create:
         if path.exists():
             raise FileExistsError(f"Refusing to overwrite existing state: {path}")
@@ -363,7 +441,10 @@ def commit_state(path, old, state):
     state["updated_at"] = now()
     state["revision"] = old["revision"] + 1
     validate_state(state)
-    atomic_json(path, state)
+    with startup_lock(path, suffix=".write.lock"):
+        if read_state(path) != old:
+            raise StateConflict("State changed; retry the update against the latest state")
+        atomic_json(path, state)
     return state
 
 
@@ -447,6 +528,8 @@ def subdivide_state(path, parent, stages, current=None, reason=None, *, branch=N
         else:
             statuses = [parent_status] * len(stages)
         group = {"stages": stages, "stage_statuses": statuses}
+        if existing is not None:
+            preserve_todos(existing, group)
     return commit_substages(path, old, parent, group, root=root, branch=branch)
 
 
@@ -511,6 +594,7 @@ def replan_state(path, stages, current, reason, *, branch=None):
         root, old = read_scope(path, branch)
         route = {key: old[key] for key in ("name", "parent", "mainline")}
         route.update(stages=stages, stage_statuses=statuses)
+        preserve_todos(old, route)
         return commit_scope(path, root, route, branch)
     original = Path(path).read_bytes()
     old = json.loads(original.decode("utf-8"))
@@ -536,6 +620,7 @@ def replan_state(path, stages, current, reason, *, branch=None):
         state["mainline"] = old["mainline"]
     if "branches" in old:
         state["branches"] = old["branches"]
+    preserve_todos(old, state)
     validate_state(state)
     if legacy:
         backup = Path(path).with_name(f"{Path(path).stem}.legacy-{uuid.uuid4().hex}.json")
@@ -543,7 +628,10 @@ def replan_state(path, stages, current, reason, *, branch=None):
             stream.write(original)
             stream.flush()
             os.fsync(stream.fileno())
-    atomic_json(path, state)
+    with startup_lock(path, suffix=".write.lock"):
+        if Path(path).read_bytes() != original:
+            raise StateConflict("State changed; retry replan against the latest state")
+        atomic_json(path, state)
     return state
 
 
@@ -557,6 +645,7 @@ def make_server(state_path, port=0):
     bound_task = initial["task_id"]
     cache = {"state": initial}
     cache_lock = threading.Lock()
+    todo_token = secrets.token_urlsafe(32)
     card = Path(__file__).with_name("card.html")
 
     class Handler(BaseHTTPRequestHandler):
@@ -605,6 +694,8 @@ def make_server(state_path, port=0):
                     except (OSError, ValueError, TypeError) as exc:
                         error = f"Read failed; showing last known state: {exc}"
                     self.json_response({"state": cache["state"], "error": error})
+            elif route == "/todo-token":
+                self.json_response({"token": todo_token})
             elif route == "/":
                 try:
                     self.respond(200, card.read_bytes(), "text/html; charset=utf-8")
@@ -616,7 +707,37 @@ def make_server(state_path, port=0):
         def do_POST(self):
             if not self.local_request():
                 return
-            self.json_response({"error": "read only"}, 405)
+            if self.command != "POST" or self.path != "/todo":
+                self.json_response({"error": "read only"}, 405)
+                return
+            origin = f"http://127.0.0.1:{self.server.server_port}"
+            if (self.headers.get("Origin") != origin
+                    or not secrets.compare_digest(self.headers.get("X-Mainline-Token", ""), todo_token)):
+                self.json_response({"error": "local view token required"}, 403)
+                return
+            try:
+                if (self.headers.get_content_type() != "application/json"
+                        or self.headers.get("Transfer-Encoding") is not None
+                        or len(self.headers.get_all("Content-Length", [])) != 1
+                        or not 0 < int(self.headers["Content-Length"]) <= 8192):
+                    raise ValueError("Expected a small JSON request")
+                self.connection.settimeout(2)
+                data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                if (not isinstance(data, dict) or set(data) != {"stage", "parent", "branch", "id", "done", "revision"}
+                        or type(data["done"]) is not bool or type(data["revision"]) is not int
+                        or not isinstance(data["id"], str)):
+                    raise ValueError("Only an existing todo can be checked or unchecked")
+                result = todo_state(state_path, data["stage"], parent=data["parent"], branch=data["branch"],
+                                    done=[data["id"]] if data["done"] else None,
+                                    pending=None if data["done"] else [data["id"]],
+                                    revision=data["revision"], task_id=bound_task)
+                self.json_response({"state": result, "error": None})
+            except StateConflict as exc:
+                self.json_response({"error": str(exc)}, 409)
+            except (ValueError, TypeError, KeyError) as exc:
+                self.json_response({"error": str(exc)}, 400)
+            except (OSError, RuntimeError):
+                self.json_response({"error": "Could not save todo; refresh and retry"}, 503)
 
         do_PUT = do_POST
         do_DELETE = do_POST
@@ -695,9 +816,9 @@ def discover(state_path, task_id):
 
 
 @contextmanager
-def startup_lock(state_path):
+def startup_lock(state_path, suffix=".start.lock"):
     # OS locks are released even if the launcher exits unexpectedly.
-    with Path(state_path).with_suffix(".start.lock").open("a+b") as lock:
+    with Path(state_path).with_suffix(suffix).open("a+b") as lock:
         if lock.tell() == 0:
             lock.write(b"0")
             lock.flush()
@@ -898,11 +1019,20 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("recover", help="Handle a trusted SessionStart hook on stdin")
     commands.add_parser("install-hook", help="Register automatic recovery; user trust is still required").add_argument("--codex-home")
-    for command in ("init", "position", "status", "subdivide", "finish", "describe", "replan", "read", "branch", "serve", "start"):
+    for command in ("init", "position", "status", "subdivide", "finish", "describe", "replan", "read", "branch", "todo", "serve", "start"):
         sub = commands.add_parser(command)
         sub.add_argument("--state", required=True)
-        if command in ("position", "status", "subdivide", "finish", "describe", "replan", "read"):
+        if command in ("position", "status", "subdivide", "finish", "describe", "replan", "read", "todo"):
             sub.add_argument("--branch")
+        if command == "todo":
+            sub.add_argument("--stage", required=True)
+            sub.add_argument("--parent")
+            for action in ("add", "done", "pending"):
+                sub.add_argument("--" + action, action="append")
+            order = sub.add_mutually_exclusive_group()
+            order.add_argument("--ordered", dest="ordered", action="store_true")
+            order.add_argument("--unordered", dest="ordered", action="store_false")
+            sub.set_defaults(ordered=None)
         if command == "read":
             sub.add_argument("--overview", action="store_true")
         if command == "branch":
@@ -966,6 +1096,9 @@ def main():
             result = finish_state(path, branch=args.branch)
         elif args.command == "describe":
             result = describe_state(path, args.mainline, stage=args.stage, parent=args.parent, details=args.details, branch=args.branch)
+        elif args.command == "todo":
+            result = todo_state(path, args.stage, parent=args.parent, branch=args.branch,
+                                add=args.add, done=args.done, pending=args.pending, ordered=args.ordered)
         elif args.command == "replan":
             result = replan_state(path, args.stage, args.current, args.reason, branch=args.branch)
         elif args.command == "branch":

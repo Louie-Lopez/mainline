@@ -18,6 +18,10 @@ const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'te
       assert.equal(await page.locator('#axis').getAttribute('data-layout'),'horizontal');
       assert.equal(await page.locator('#axis > .stage[data-status="active"]').count(),2);
       assert.equal(await page.locator('#axis').getAttribute('data-stale'),'false');
+      assert.equal(await page.locator('#view-details').innerText(),language==='zh'?'环节说明':'Stage details');
+      await page.locator('#view-todos').click();
+      assert.equal(await page.locator('#todo-panel').innerText(),language==='zh'?'暂无待办':'No to-dos');
+      await page.locator('#view-details').click();
       const goal=await page.locator('#mainline').innerText();
       await page.locator('.scenarios button').nth(2).click();
       assert.equal(await page.locator('.activity').first().innerText(),language==='zh'?'修复错误':'Fixing');
