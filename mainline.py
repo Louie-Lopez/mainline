@@ -891,12 +891,16 @@ def session_index(session_id):
 
 
 def save_binding(destination, binding):
-    try:
-        if json.loads(destination.read_text(encoding="utf-8")) == binding:
-            return
-    except (OSError, ValueError):
-        pass
-    atomic_json(destination, binding)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    # Serialize the comparison and replacement: another launcher reading this
+    # file can otherwise prevent os.replace on Windows.
+    with startup_lock(destination, suffix=".write.lock"):
+        try:
+            if json.loads(destination.read_text(encoding="utf-8")) == binding:
+                return
+        except (OSError, ValueError):
+            pass
+        atomic_json(destination, binding)
 
 
 def bind_session(state_path, session_id):

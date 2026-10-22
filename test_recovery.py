@@ -201,7 +201,7 @@ class RecoveryTests(unittest.TestCase):
 
     def test_concurrent_launches_share_one_service(self):
         cli = [sys.executable, str(Path(mainline.__file__)), 'start', '--state', str(self.path), '--session-id', 'parallel']
-        children = [subprocess.Popen(cli, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for _ in range(2)]
+        children = [subprocess.Popen(cli, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for _ in range(4)]
         runtime = None
         try:
             results = []
@@ -210,8 +210,8 @@ class RecoveryTests(unittest.TestCase):
                 self.assertEqual(child.returncode, 0, err)
                 results.append(json.loads(out))
             runtime = results[0]
-            self.assertEqual(results[0]['pid'], results[1]['pid'])
-            self.assertEqual(sum(x['reused'] for x in results), 1)
+            self.assertEqual(len({item['pid'] for item in results}), 1)
+            self.assertEqual(sum(x['reused'] for x in results), len(children) - 1)
         finally:
             if runtime and mainline.discover(self.path, '测试任务')['pid'] == runtime['pid']:
                 os.kill(runtime['pid'], signal.SIGTERM)
