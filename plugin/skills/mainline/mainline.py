@@ -764,6 +764,20 @@ def valid_session_id(identity):
     return isinstance(identity, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}", identity) is not None
 
 
+def session_index(session_id):
+    root = absolute_path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+    return root / "mainline" / "sessions" / (session_id + ".json")
+
+
+def save_binding(destination, binding):
+    try:
+        if json.loads(destination.read_text(encoding="utf-8")) == binding:
+            return
+    except (OSError, ValueError):
+        pass
+    atomic_json(destination, binding)
+
+
 def bind_session(state_path, session_id):
     if not valid_session_id(session_id):
         raise ValueError("Invalid session ID")
@@ -772,10 +786,9 @@ def bind_session(state_path, session_id):
     store = next((parent for parent in state_path.parents if parent.name == ".mainline"),
                  state_path.parent / ".mainline")
     binding = {"state_path": str(state_path), "task_id": state["task_id"]}
-    destination = store / "sessions" / (session_id + ".json")
-    if destination.exists() and json.loads(destination.read_text(encoding="utf-8")) == binding:
-        return
-    atomic_json(destination, binding)
+    # Keep the workspace record for portability and a user index for changed cwd.
+    for destination in (store / "sessions" / (session_id + ".json"), session_index(session_id)):
+        save_binding(destination, binding)
 
 
 def session_state(event):
@@ -788,6 +801,11 @@ def session_state(event):
         return None
     cwd = Path(cwd).resolve()
     # Exact conversation IDs only. Never pick a project's newest/only state by guesswork.
+    registered = session_index(identity)
+    if registered.is_file():
+        data = json.loads(registered.read_text(encoding="utf-8"))
+        path = absolute_path(data["state_path"])
+        return path if read_state(path)["task_id"] == data["task_id"] else None
     for workspace in (cwd, *cwd.parents):
         store = workspace / ".mainline"
         binding = store / "sessions" / (identity + ".json")
@@ -812,6 +830,11 @@ def recover_session(event):
     if state_path is None:
         return None
     result = start(state_path)
+    try:
+        save_binding(session_index(event["session_id"]),
+                     {"state_path": str(state_path), "task_id": read_state(state_path)["task_id"]})
+    except OSError:
+        pass  # A read-only index must not prevent an otherwise valid recovery.
     return {"hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": (

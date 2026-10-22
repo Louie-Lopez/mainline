@@ -20,11 +20,13 @@ def check_runtime(skill_dir, run):
     state = (run / "project with spaces 中文" / "state.json").resolve()
     http = build_opener(ProxyHandler({}))
     task_id = "packaged-runtime-" + uuid.uuid4().hex
+    hook_home = (run / "hook-profile").resolve()
+    env = {**os.environ, "CODEX_HOME": str(hook_home)}
 
     def cli(*args):
         result = subprocess.run(
             [sys.executable, "-X", "utf8", str(script), *args, "--state", str(state)],
-            capture_output=True, text=True, encoding="utf-8", timeout=15,
+            capture_output=True, text=True, encoding="utf-8", timeout=15, env=env,
         )
         assert result.returncode == 0, result.stderr
         return json.loads(result.stdout)
@@ -51,16 +53,17 @@ def check_runtime(skill_dir, run):
             assert get("/" + query) == script.with_name("card.html").read_bytes()
         second = cli("start")
         assert second["reused"] is True and second["pid"] == first["pid"]
-        hook_home = run / "hook-profile"
         subprocess.run([sys.executable, str(script), "install-hook", "--codex-home", str(hook_home.resolve())],
                        check=True, capture_output=True, timeout=10)
         hook = json.loads((hook_home / "hooks.json").read_text(encoding="utf-8"))["hooks"]["SessionStart"][0]["hooks"][0]
         command = hook["commandWindows"] if os.name == "nt" else hook["command"]
+        other_workspace = (run / 'another workspace').resolve()
+        other_workspace.mkdir()
         event = {"hook_event_name": "SessionStart", "source": "resume",
-                 "session_id": "package-chat", "cwd": str(state.parent)}
+                 "session_id": "package-chat", "cwd": str(other_workspace)}
         original = state.read_bytes()
         recovered = subprocess.run(command, shell=True, input=json.dumps(event),
-                                   cwd=state.parent, env=os.environ.copy(),
+                                   cwd=other_workspace, env=env,
                                    capture_output=True, text=True, encoding="utf-8", timeout=15)
         assert recovered.returncode == 0, recovered.stderr
         assert first["url"] in json.loads(recovered.stdout)["hookSpecificOutput"]["additionalContext"]
@@ -95,7 +98,7 @@ def check_runtime(skill_dir, run):
                        "verified server reuse", "packaged HTML in both languages",
                        "parallel stages", "substage labels and goals", "live HTTP updates",
                        "completion preserves lifecycle", "branch progress isolation and compact reads",
-                       "archive and restore preserve branch progress", "registered hook command and session binding"],
+                       "archive and restore preserve branch progress", "registered hook command after working directory changes"],
         }
         (run / "runtime-report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

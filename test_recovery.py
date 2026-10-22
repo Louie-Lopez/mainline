@@ -14,7 +14,12 @@ import test_mainline
 
 
 class RecoveryTests(unittest.TestCase):
-    setUp = test_mainline.MainlineTests.setUp
+    def setUp(self):
+        test_mainline.MainlineTests.setUp(self)
+        self.profile = self.directory / 'codex-home'
+        environment = patch.dict(os.environ, {'CODEX_HOME': str(self.profile)})
+        environment.start()
+        self.addCleanup(environment.stop)
 
     def remember(self, url):
         mainline.atomic_json(mainline.runtime_path(self.path), {
@@ -73,7 +78,7 @@ class RecoveryTests(unittest.TestCase):
             self.assertEqual(start.call_count, 1)
             for changes in ({"session_id": "unknown"}, {"source": "compact"},
                             {"source": "fork"}, {"agent_id": "child"},
-                            {"cwd": str(self.directory.parent)}, {"cwd": "relative"},
+                            {"cwd": "relative"},
                             {"session_id": "../known"}, {"hook_event_name": "UserPromptSubmit"}):
                 self.assertIsNone(mainline.recover_session(self.event(**changes)))
             self.assertEqual(start.call_count, 1)
@@ -98,29 +103,69 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(mainline.session_state(self.event(session_id='third-chat')), self.path)
 
     def test_binding_outside_workspace_or_changed_identity_is_rejected(self):
-        mainline.bind_session(self.path, 'known')
         binding = self.directory / '.mainline' / 'sessions' / 'known.json'
-        data = json.loads(binding.read_text(encoding='utf-8'))
-        data['task_id'] = 'wrong-project'
+        data = {'state_path': str(self.path), 'task_id': 'wrong-project'}
         mainline.atomic_json(binding, data)
         self.assertIsNone(mainline.session_state(self.event()))
         data['state_path'] = str(self.directory.parent / 'other.json')
         mainline.atomic_json(binding, data)
         self.assertIsNone(mainline.session_state(self.event()))
 
+    def test_registered_conversation_survives_parent_and_sibling_cwd(self):
+        mainline.bind_session(self.path, 'known')
+        original = self.path.read_bytes()
+        sibling = self.directory.parent / 'different workspace'
+        sibling.mkdir()
+        for cwd in (self.directory.parent, sibling):
+            self.assertEqual(mainline.session_state(self.event(cwd=str(cwd))), self.path)
+            self.assertIsNone(mainline.session_state(self.event(cwd=str(cwd), session_id='unknown')))
+        self.assertEqual(self.path.read_bytes(), original)
+
+    def test_latest_explicit_binding_wins_and_other_conversations_stay_separate(self):
+        other = self.directory / 'other' / 'state.json'
+        mainline.init_state(other, 'other-project', self.stages)
+        mainline.bind_session(self.path, 'known')
+        mainline.bind_session(self.path, 'another-chat')
+        mainline.bind_session(other, 'known')
+        self.assertEqual(mainline.session_state(self.event()), other)
+        self.assertEqual(mainline.session_state(self.event(session_id='another-chat')), self.path)
+
+    def test_stale_or_invalid_user_index_never_falls_back_to_another_project(self):
+        mainline.bind_session(self.path, 'known')
+        index = mainline.session_index('known')
+        for data in ({'state_path': str(self.path), 'task_id': 'wrong'},
+                     {'state_path': 'relative.json', 'task_id': 'test'},
+                     {'state_path': str(self.directory / 'missing.json'), 'task_id': 'test'},
+                     [], {}):
+            mainline.atomic_json(index, data)
+            cli = [sys.executable, str(Path(mainline.__file__)), 'recover']
+            result = subprocess.run(cli, input=json.dumps(self.event()), text=True, capture_output=True, encoding="utf-8")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout, '')
+
+    def test_legacy_recovery_remembers_binding_for_later_directory_changes(self):
+        state = self.directory / '.mainline' / 'known' / 'state.json'
+        mainline.init_state(state, 'known', self.stages)
+        with patch.object(mainline, 'start', return_value={'url': 'http://127.0.0.1:1234'}):
+            mainline.recover_session(self.event())
+        self.assertEqual(mainline.session_state(self.event(cwd=str(self.directory.parent))), state)
+
     def test_rebinding_is_idempotent_and_rejects_path_traversal(self):
         mainline.bind_session(self.path, 'known')
         binding = self.directory / '.mainline' / 'sessions' / 'known.json'
         before = binding.stat().st_mtime_ns
+        index = mainline.session_index('known')
+        index_before = index.stat().st_mtime_ns
         mainline.bind_session(self.path, 'known')
         self.assertEqual(binding.stat().st_mtime_ns, before)
+        self.assertEqual(index.stat().st_mtime_ns, index_before)
         with self.assertRaises(ValueError):
             mainline.bind_session(self.path, '../escape')
 
     def test_bad_hook_input_does_not_block_conversation(self):
         cli = [sys.executable, str(Path(mainline.__file__)), 'recover']
         for payload in ('invalid json', '{}', '[]', '{"hook_event_name":"SessionStart"}'):
-            result = subprocess.run(cli, input=payload, text=True, capture_output=True)
+            result = subprocess.run(cli, input=payload, text=True, capture_output=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0)
             self.assertEqual(result.stdout, '')
 
