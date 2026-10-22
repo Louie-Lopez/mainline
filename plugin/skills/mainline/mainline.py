@@ -961,9 +961,13 @@ def recover_session(event):
         "additionalContext": (
             "Mainline auto-restore is enabled for this conversation. Its saved project is ready at "
             + result["url"]
-            + ". At the next turn, use open_in_codex once with this browser URL in the bottom panel. "
-            "Only restore the view; do not read, summarize, or change project progress for this. "
-            "Do not reopen on routine later turns."
+            + ". At the next turn, check this conversation's existing browser tabs first. "
+            "If this URL is already open (ignore trailing slash and language query), reuse that tab; "
+            "do not open another by URL. Refresh the existing tab only after a UI update or when stale. "
+            "If confirmed absent, use open_in_codex once in the bottom panel. "
+            "If tab inventory is unavailable, keep the known view or show the URL instead of opening blindly. "
+            "Only restore the view; do not read, summarize, or change project progress. "
+            "Do not reopen on routine later turns or after an intentional close."
         ),
     }}
 
