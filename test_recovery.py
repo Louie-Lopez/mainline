@@ -190,6 +190,43 @@ class RecoveryTests(unittest.TestCase):
         self.assertFalse(mainline.install_recovery_hook(str(home))['changed'])
         self.assertEqual(path.read_bytes(), before)
 
+    def test_hook_survives_removed_plugin_version_and_refresh_keeps_command(self):
+        original = self.path.read_bytes()
+        mainline.bind_session(self.path, 'known')
+        source = self.directory / 'plugin-v1'
+        source.mkdir()
+        for name in ('mainline.py', 'card.html'):
+            (source / name).write_bytes(Path(mainline.__file__).with_name(name).read_bytes())
+        with patch.object(mainline, '__file__', str(source / 'mainline.py')):
+            mainline.install_recovery_hook(str(self.profile))
+        config = (self.profile / 'hooks.json').read_bytes()
+        hook = json.loads(config)['hooks']['SessionStart'][0]['hooks'][0]
+        command = hook['commandWindows'] if os.name == 'nt' else hook['command']
+        # Retire only isolated fixture files, preserving them for inspection.
+        for name in ('mainline.py', 'card.html'):
+            (source / name).rename(source / (name + '.retired'))
+        runtime = None
+        try:
+            result = subprocess.run(command, shell=True, input=json.dumps(self.event()),
+                                    capture_output=True, text=True, encoding='utf-8', timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            runtime = mainline.discover(self.path, '测试任务')
+            self.assertIsNotNone(runtime)
+            self.assertIn(runtime['url'], json.loads(result.stdout)['hookSpecificOutput']['additionalContext'])
+            second = self.directory / 'plugin-v2'
+            second.mkdir()
+            for name in ('mainline.py', 'card.html'):
+                (second / name).write_bytes(Path(mainline.__file__).with_name(name).read_bytes() + b'\n')
+            with patch.object(mainline, '__file__', str(second / 'mainline.py')):
+                self.assertFalse(mainline.install_recovery_hook(str(self.profile))['changed'])
+            self.assertEqual((self.profile / 'hooks.json').read_bytes(), config)
+            self.assertEqual((self.profile / 'mainline/hook-runtime/mainline.py').read_bytes(),
+                             (second / 'mainline.py').read_bytes())
+            self.assertEqual(self.path.read_bytes(), original)
+        finally:
+            if runtime and mainline.discover(self.path, '测试任务')['pid'] == runtime['pid']:
+                os.kill(runtime['pid'], signal.SIGTERM)
+
     def test_install_hook_rejects_invalid_existing_configuration(self):
         home = self.directory / 'codex-home'
         home.mkdir()

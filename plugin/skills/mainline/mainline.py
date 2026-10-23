@@ -984,7 +984,18 @@ def install_recovery_hook(codex_home=None):
     data = json.loads(raw.decode("utf-8-sig")) if raw is not None else {}
     if not isinstance(data, dict) or not isinstance(data.get("hooks", {}), dict):
         raise ValueError("Existing hooks.json must contain a hooks object")
-    code = "import runpy;runpy.run_path(" + repr(str(Path(__file__).resolve())) + ",run_name='__main__')"
+    # Keep recovery independent of versioned plugin caches, which upgrades remove.
+    runtime = root / "mainline" / "hook-runtime"
+    sources = {name: Path(__file__).resolve().with_name(name).read_bytes()
+               for name in ("mainline.py", "card.html")}
+    runtime.mkdir(parents=True, exist_ok=True)
+    for name, payload in sources.items():
+        target = runtime / name
+        if not target.exists() or target.read_bytes() != payload:
+            temporary = runtime / ("." + name + "." + uuid.uuid4().hex + ".tmp")
+            temporary.write_bytes(payload)
+            os.replace(temporary, target)
+    code = "import runpy;runpy.run_path(" + repr(str(runtime / "mainline.py")) + ",run_name='__main__')"
     encoded = base64.b64encode(code.encode("utf-8")).decode("ascii")
     runner = ' -c "import base64;exec(base64.b64decode(\'' + encoded + '\'))" recover'
     handler = {"type": "command", "command": "python3" + runner,
